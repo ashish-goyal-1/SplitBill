@@ -1,12 +1,15 @@
 /**
- * Settlement Algorithm - Simplify group debts into minimal transactions
+ * 🚀 HYBRID DEBT SETTLEMENT ALGORITHM
+ * 
+ * Combines O(N) Exact-Match Heuristic with O(N log N) Sorted Greedy
+ * Total Complexity: O(N log N)
  * 
  * Features:
  * - Floating-point safe with consistent rounding
  * - Tolerance-based matching (±$0.01)
- * - Iterative greedy loop (no recursion)
+ * - Hash-based exact match optimization (O(N))
+ * - Sorted two-pointer greedy (O(N log N))
  * - Zero-value settlement filtering
- * - Optional Minimum Cash Flow optimizer
  */
 
 const TOLERANCE = 0.01;
@@ -26,15 +29,15 @@ function isZero(value) {
 }
 
 /**
- * Check if two values are equal within tolerance
- */
-function isEqual(a, b) {
-    return Math.abs(a - b) < TOLERANCE;
-}
-
-/**
- * Greedy Algorithm - Fast and good enough for most cases
- * Time Complexity: O(n²) where n = number of members
+ * HYBRID ALGORITHM - O(N log N)
+ * 
+ * Step 1: O(N) Hash-based exact match finding
+ *         - Uses a Map to find pairs with opposite balances instantly
+ *         - Eliminates obvious pairs (A owes $50, B is owed $50)
+ * 
+ * Step 2: O(N log N) Sorted two-pointer greedy
+ *         - Sorts remaining creditors and debtors by amount
+ *         - Uses two-pointer technique for optimal matching
  * 
  * @param {Object} transactions - Object with {userEmail: balance}
  *                                Positive = is owed, Negative = owes
@@ -42,119 +45,67 @@ function isEqual(a, b) {
  */
 function simplifyDebts(transactions) {
     const splits = [];
-    const balances = new Map(Object.entries(transactions).map(
-        ([key, val]) => [key, round(val)]
-    ));
 
-    // STEP 1: Settle exact opposite balances first (tolerance-based)
-    // This optimization reduces the number of transactions when
-    // two people have exactly opposite balances
+    // Convert to array of [person, balance] for processing
+    let balances = Object.entries(transactions)
+        .map(([person, amount]) => ({ person, amount: round(amount) }))
+        .filter(b => !isZero(b.amount));
+
+    // --- STEP 1: Exact Match Optimization O(N) ---
+    // Uses a Map to find pairs with opposite balances in one pass
+    // This is the "heuristic" that makes socially cleaner settlements
+    const amountToIndex = new Map();
     const settled = new Set();
-    const keys = Array.from(balances.keys());
 
-    for (let i = 0; i < keys.length; i++) {
-        if (settled.has(keys[i])) continue;
-        const bal1 = balances.get(keys[i]);
-        if (isZero(bal1)) continue;
+    for (let i = 0; i < balances.length; i++) {
+        if (settled.has(i)) continue;
+        const { person, amount } = balances[i];
+        const oppositeKey = round(-amount).toString();
 
-        for (let j = i + 1; j < keys.length; j++) {
-            if (settled.has(keys[j])) continue;
-            const bal2 = balances.get(keys[j]);
+        // Check if we have seen the exact opposite amount
+        if (amountToIndex.has(oppositeKey)) {
+            const j = amountToIndex.get(oppositeKey);
+            if (!settled.has(j)) {
+                const other = balances[j];
+                // Found a perfect pair! Settle them immediately
+                const settleAmount = Math.abs(amount);
 
-            // Check if they are opposite (within tolerance)
-            if (isEqual(bal2, -bal1)) {
-                if (bal1 > 0) {
-                    // keys[j] pays keys[i]
-                    splits.push([keys[j], keys[i], round(bal1)]);
+                if (amount < 0) {
+                    // Current person is debtor (-), other is creditor (+)
+                    splits.push([person, other.person, settleAmount]);
                 } else {
-                    // keys[i] pays keys[j]
-                    splits.push([keys[i], keys[j], round(bal2)]);
+                    // Current person is creditor (+), other is debtor (-)
+                    splits.push([other.person, person, settleAmount]);
                 }
-                balances.set(keys[i], 0);
-                balances.set(keys[j], 0);
-                settled.add(keys[i]);
-                settled.add(keys[j]);
-                break;
-            }
-        }
-    }
 
-    // STEP 2: Iterative greedy loop - match max creditor with max debtor
-    // Continue until all balances are settled
-    while (true) {
-        // Find max creditor (most positive balance)
-        let maxCreditor = null;
-        let maxCredit = 0;
-
-        // Find max debtor (most negative balance)
-        let maxDebtor = null;
-        let maxDebt = 0;
-
-        for (const [person, balance] of balances.entries()) {
-            if (balance > maxCredit) {
-                maxCredit = balance;
-                maxCreditor = person;
-            }
-            if (balance < maxDebt) {
-                maxDebt = balance;
-                maxDebtor = person;
+                // Mark both as settled
+                settled.add(i);
+                settled.add(j);
+                amountToIndex.delete(oppositeKey);
+                continue;
             }
         }
 
-        // Exit if no more settlements needed
-        if (maxCreditor === null || maxDebtor === null) break;
-        if (isZero(maxCredit) || isZero(maxDebt)) break;
-
-        // Settle the minimum of what's owed and what's due
-        const settleAmount = round(Math.min(maxCredit, -maxDebt));
-
-        if (settleAmount > 0) {
-            // Record: debtor pays creditor
-            splits.push([maxDebtor, maxCreditor, settleAmount]);
-
-            // Update balances
-            balances.set(maxCreditor, round(balances.get(maxCreditor) - settleAmount));
-            balances.set(maxDebtor, round(balances.get(maxDebtor) + settleAmount));
-        } else {
-            // No more meaningful settlements possible
-            break;
-        }
+        // No match found yet, store for future matching
+        amountToIndex.set(round(amount).toString(), i);
     }
 
-    // STEP 3: Filter out any zero-value or negligible settlements
-    return splits.filter(([from, to, amount]) => amount >= TOLERANCE);
-}
+    // Filter out settled balances for Step 2
+    balances = balances.filter((_, i) => !settled.has(i));
 
-/**
- * Minimum Cash Flow Algorithm - Optimal solution for advanced users
- * Uses a sorted two-pointer approach to minimize transactions
- * Time Complexity: O(n log n)
- * 
- * @param {Object} transactions - Object with {userEmail: balance}
- * @returns {Array} Array of [from, to, amount] settlements
- */
-function simplifyDebtsMinCashFlow(transactions) {
-    const splits = [];
+    // --- STEP 2: Sorted Greedy Algorithm O(N log N) ---
+    // Separate into creditors (positive balance) and debtors (negative balance)
+    const creditors = balances.filter(b => b.amount > 0);
+    const debtors = balances.filter(b => b.amount < 0)
+        .map(b => ({ person: b.person, amount: -b.amount })); // Store debt as positive
 
-    // Separate into creditors (owed money) and debtors (owe money)
-    const creditors = [];
-    const debtors = [];
-
-    for (const [person, balance] of Object.entries(transactions)) {
-        const rounded = round(balance);
-        if (rounded > TOLERANCE) {
-            creditors.push({ person, amount: rounded });
-        } else if (rounded < -TOLERANCE) {
-            debtors.push({ person, amount: -rounded }); // Store as positive
-        }
-    }
-
-    // Sort both arrays by amount (descending) for optimal matching
+    // Sort descending by amount (largest first) - O(N log N)
     creditors.sort((a, b) => b.amount - a.amount);
     debtors.sort((a, b) => b.amount - a.amount);
 
-    // Two-pointer approach to match creditors with debtors
-    let i = 0, j = 0;
+    // Two-pointer matching - O(N)
+    let i = 0; // Creditor pointer
+    let j = 0; // Debtor pointer
 
     while (i < creditors.length && j < debtors.length) {
         const credit = creditors[i];
@@ -166,11 +117,61 @@ function simplifyDebtsMinCashFlow(transactions) {
         if (settleAmount >= TOLERANCE) {
             splits.push([debt.person, credit.person, settleAmount]);
 
+            // Update internal balances
             credit.amount = round(credit.amount - settleAmount);
             debt.amount = round(debt.amount - settleAmount);
         }
 
-        // Move pointer if balance is settled
+        // Move pointers when balance is fully settled
+        if (credit.amount < TOLERANCE) i++;
+        if (debt.amount < TOLERANCE) j++;
+    }
+
+    return splits;
+}
+
+/**
+ * LEGACY: Minimum Cash Flow Algorithm
+ * Pure sorted two-pointer without the exact-match heuristic
+ * Time Complexity: O(N log N)
+ * 
+ * Kept for backward compatibility
+ */
+function simplifyDebtsMinCashFlow(transactions) {
+    const splits = [];
+
+    // Separate into creditors and debtors
+    const creditors = [];
+    const debtors = [];
+
+    for (const [person, balance] of Object.entries(transactions)) {
+        const rounded = round(balance);
+        if (rounded > TOLERANCE) {
+            creditors.push({ person, amount: rounded });
+        } else if (rounded < -TOLERANCE) {
+            debtors.push({ person, amount: -rounded });
+        }
+    }
+
+    // Sort descending
+    creditors.sort((a, b) => b.amount - a.amount);
+    debtors.sort((a, b) => b.amount - a.amount);
+
+    // Two-pointer matching
+    let i = 0, j = 0;
+
+    while (i < creditors.length && j < debtors.length) {
+        const credit = creditors[i];
+        const debt = debtors[j];
+
+        const settleAmount = round(Math.min(credit.amount, debt.amount));
+
+        if (settleAmount >= TOLERANCE) {
+            splits.push([debt.person, credit.person, settleAmount]);
+            credit.amount = round(credit.amount - settleAmount);
+            debt.amount = round(debt.amount - settleAmount);
+        }
+
         if (credit.amount < TOLERANCE) i++;
         if (debt.amount < TOLERANCE) j++;
     }

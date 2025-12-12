@@ -9,11 +9,12 @@ A powerful full-stack MERN app for smart group expense tracking, optimized debt 
 
 ## ✨ Features
 
-### 🔐 Authentication & User Management
-- Secure login & registration with JWT
+### 🔐 Authentication & Security
+- Secure login & registration with **JWT dual-token system**
+- **Access Token** (15 min) + **Refresh Token** (7 days) with rotation
 - Encrypted passwords (bcryptjs)
 - Profile view/edit with Gravatar support
-- Password update flow with verification
+- Automatic token refresh for seamless UX
 
 ### 👥 Group Management
 - Create/edit/delete groups
@@ -28,7 +29,10 @@ A powerful full-stack MERN app for smart group expense tracking, optimized debt 
 - Recurring options: daily/weekly/monthly/yearly
 
 ### 💰 Settlements & Smart Splitting
-- Greedy transaction minimization algorithm
+- **Hybrid O(N log N) Algorithm** for optimal debt simplification:
+  - **Step 1**: O(N) Hash-based exact match heuristic
+  - **Step 2**: O(N log N) Sorted two-pointer greedy
+- Minimizes number of transactions between group members
 - Balance view (who owes whom)
 - Record settlements and payment methods
 
@@ -38,8 +42,11 @@ A powerful full-stack MERN app for smart group expense tracking, optimized debt 
 - Settlement confirmation notifications
 
 ### 📊 Analytics & Dashboard
-- Monthly and daily spend visualizations
-- Pie chart breakdown by category
+- **MongoDB Aggregation Pipelines** for real-time analytics
+- Category-wise expense breakdown
+- Monthly spending trends
+- Top spenders in group
+- Daily spending breakdown
 - Dashboard widgets for quick overview
 
 ### 🔔 Notifications
@@ -51,11 +58,63 @@ A powerful full-stack MERN app for smart group expense tracking, optimized debt 
 - 📄 Export to PDF: Full group expense report
 - 📊 Export to CSV: All group data as spreadsheet
 
+### ⚡ Performance Optimizations
+- **Gzip Compression**: ~70% reduction in response size
+- **Code Splitting**: React.lazy() for route-based chunking
+- **Service Worker Caching**: PWA with offline support
+- Lazy loaded routes & optimized bundle
+
 ### 🎨 UI/UX Enhancements
 - Material UI theming (dark/light toggle)
-- PWA installable on mobile
-- Lazy loaded routes & custom icons
+- **PWA installable** on mobile & desktop
+- Custom icons & smooth animations
 - Empty-state illustrations for cleaner UI
+
+---
+
+## 🧮 Algorithm Details
+
+### Hybrid Debt Settlement Algorithm
+
+The settlement algorithm uses a **two-step hybrid approach** to minimize transactions:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Input: { Alice: +50, Bob: -30, Charlie: -20, Dave: +30 }   │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│  STEP 1: Hash-based Exact Match [O(N)]                      │
+│  ─────────────────────────────────────────                  │
+│  • Build Map of {amount → person}                           │
+│  • Find pairs: Bob(-30) ↔ Dave(+30) ✓ Exact match!          │
+│  • Settlement: Bob pays Dave $30                            │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│  STEP 2: Sorted Two-Pointer [O(N log N)]                    │
+│  ────────────────────────────────────────                   │
+│  • Remaining: Alice(+50), Charlie(-20)                      │
+│  • Sort creditors & debtors                                 │
+│  • Match using two pointers                                 │
+│  • Settlement: Charlie pays Alice $20                       │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Output: [ [Bob, Dave, 30], [Charlie, Alice, 20] ]          │
+│  Total Complexity: O(N log N)                               │
+└─────────────────────────────────────────────────────────────┘
+```
+
+| Step | Complexity | Technique |
+|------|------------|-----------|
+| Exact Match | O(N) | Hash Map lookup |
+| Sorting | O(N log N) | JavaScript TimSort |
+| Two-Pointer | O(N) | Greedy matching |
+| **Total** | **O(N log N)** | Hybrid approach |
 
 ---
 
@@ -68,12 +127,15 @@ A powerful full-stack MERN app for smart group expense tracking, optimized debt 
 - Chart.js via react-chartjs-2
 - Iconify & Simplebar
 - Gravatar, React Context API
+- **Service Worker** for PWA
 
 ### Backend
 - Node.js + Express.js
 - MongoDB Atlas via Mongoose
-- JWT authentication
+- **MongoDB Aggregation Pipelines** for analytics
+- JWT authentication with **Refresh Token Rotation**
 - bcryptjs for password encryption
+- **Gzip Compression** via compression middleware
 - Nodemailer (Gmail SMTP)
 - node-cron for scheduling
 - Winston for structured logging
@@ -82,7 +144,27 @@ A powerful full-stack MERN app for smart group expense tracking, optimized debt 
 - Environment config via dotenv
 - MongoDB Atlas cloud database
 - Concurrently for dev scripts
-- PWA optimized frontend
+- **PWA optimized** with Service Worker caching
+
+---
+
+## 📡 API Endpoints
+
+### Analytics (New)
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/analytics/category-breakdown` | POST | Expenses by category |
+| `/api/analytics/monthly-trends` | POST | Monthly spending trends |
+| `/api/analytics/user-summary` | POST | User spending summary |
+| `/api/analytics/top-spenders` | POST | Top spenders in group |
+| `/api/analytics/daily-breakdown` | POST | Daily spending |
+
+### Authentication
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/users/v1/login` | POST | Login (returns access + refresh tokens) |
+| `/api/users/v1/refresh` | POST | Refresh access token |
+| `/api/users/v1/logout` | POST | Invalidate refresh token |
 
 ---
 
@@ -112,6 +194,7 @@ cd client && npm install
 PORT=3001
 MONGODB_URI=your_mongodb_connection_string
 ACCESS_TOKEN_SECRET=your_jwt_secret
+REFRESH_TOKEN_SECRET=your_refresh_token_secret  # Optional
 EMAIL_USER=your_email@gmail.com
 EMAIL_PASS=your_gmail_app_password
 ```

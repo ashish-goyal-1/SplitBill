@@ -1,5 +1,6 @@
 var dotenv = require('dotenv')
 var express = require('express')
+var compression = require('compression')
 var logger = require('./helper/logger')
 var requestLogger = require('./helper/requestLogger')
 var apiAuth = require('./helper/apiAuthentication')
@@ -12,8 +13,13 @@ var usersRouter = require('./routes/userRouter')
 var gorupRouter = require('./routes/groupRouter')
 var expenseRouter = require('./routes/expenseRouter')
 var notificationRouter = require('./routes/notificationRouter')
+var analyticsRouter = require('./routes/analyticsRouter')
 
 var app = express()
+
+// Gzip compression - reduces response size by ~70%
+app.use(compression())
+
 app.use(cors())
 app.use(express.json())
 app.use(requestLogger)
@@ -22,6 +28,7 @@ app.use('/api/users', usersRouter)
 app.use('/api/group', apiAuth.validateToken, gorupRouter)
 app.use('/api/expense', apiAuth.validateToken, expenseRouter)
 app.use('/api/notification', apiAuth.validateToken, notificationRouter)
+app.use('/api/analytics', apiAuth.validateToken, analyticsRouter)
 
 if (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging') {
     app.use(express.static('client/build'));

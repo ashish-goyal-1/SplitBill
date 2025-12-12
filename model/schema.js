@@ -32,6 +32,11 @@ const User = new mongoose.Schema({
         type: String,
         required: true
     },
+    // Refresh Token for token rotation
+    refreshToken: {
+        type: String,
+        default: null
+    },
     // Payment Preferences Feature
     paymentMethods: [{
         type: {

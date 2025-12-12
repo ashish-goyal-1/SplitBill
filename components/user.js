@@ -54,6 +54,7 @@ exports.userReg = async (req, res) => {
 /*
 User login function
 Accepts: email Id & Pass
+Returns: Access token (15min) and Refresh token (7 days)
 Implement Google Sign-in in the future.
 */
 exports.userLogin = async (req, res) => {
@@ -75,7 +76,15 @@ exports.userLogin = async (req, res) => {
             err.status = 401
             throw err
         } else {
-            const accessToken = apiAuth.generateAccessToken(req.body.emailId)
+            // Generate token pair (access + refresh)
+            const { accessToken, refreshToken } = apiAuth.generateTokenPair(req.body.emailId)
+
+            // Store refresh token in database for rotation
+            await model.User.updateOne(
+                { emailId: req.body.emailId },
+                { $set: { refreshToken: refreshToken } }
+            )
+
             res.status(200).json({
                 status: "Success",
                 message: "User Login Success",
@@ -83,7 +92,8 @@ exports.userLogin = async (req, res) => {
                 emailId: user.emailId,
                 firstName: user.firstName,
                 lastName: user.lastName,
-                accessToken
+                accessToken,
+                refreshToken
             })
         }
     } catch (err) {
@@ -341,6 +351,100 @@ exports.getUserNames = async (req, res) => {
         res.status(200).json({
             status: "Success",
             names: nameMap
+        });
+    } catch (err) {
+        logger.error(`URL : ${req.originalUrl} | status : ${err.status} | message: ${err.message}`);
+        res.status(err.status || 500).json({
+            message: err.message
+        });
+    }
+}
+
+/*
+Refresh Token function
+Uses refresh token to generate new access token without re-login
+Implements token rotation for security
+Accepts: refreshToken
+Returns: new accessToken (and optionally new refreshToken)
+*/
+exports.refreshToken = async (req, res) => {
+    try {
+        const { refreshToken } = req.body;
+
+        if (!refreshToken) {
+            return res.status(401).json({
+                message: "Refresh token required",
+                code: "NO_REFRESH_TOKEN"
+            });
+        }
+
+        // Validate the refresh token
+        const decoded = apiAuth.validateRefreshToken(refreshToken);
+        if (!decoded) {
+            return res.status(403).json({
+                message: "Invalid or expired refresh token",
+                code: "INVALID_REFRESH_TOKEN"
+            });
+        }
+
+        // Check if refresh token matches what's stored in database
+        const user = await model.User.findOne({ emailId: decoded.email });
+        if (!user || user.refreshToken !== refreshToken) {
+            // Token rotation detection - possible token theft
+            if (user) {
+                // Invalidate all tokens for this user
+                await model.User.updateOne(
+                    { emailId: decoded.email },
+                    { $set: { refreshToken: null } }
+                );
+            }
+            return res.status(403).json({
+                message: "Refresh token reuse detected",
+                code: "TOKEN_REUSE_DETECTED"
+            });
+        }
+
+        // Generate new token pair (rotation)
+        const newTokens = apiAuth.generateTokenPair(decoded.email);
+
+        // Update stored refresh token
+        await model.User.updateOne(
+            { emailId: decoded.email },
+            { $set: { refreshToken: newTokens.refreshToken } }
+        );
+
+        res.status(200).json({
+            status: "Success",
+            message: "Token refreshed",
+            accessToken: newTokens.accessToken,
+            refreshToken: newTokens.refreshToken
+        });
+    } catch (err) {
+        logger.error(`URL : ${req.originalUrl} | status : ${err.status} | message: ${err.message}`);
+        res.status(err.status || 500).json({
+            message: err.message
+        });
+    }
+}
+
+/*
+Logout function
+Invalidates the refresh token to prevent further use
+Accepts: emailId
+*/
+exports.logout = async (req, res) => {
+    try {
+        const emailId = req.body.emailId || req.user;
+
+        // Clear the refresh token from database
+        await model.User.updateOne(
+            { emailId: emailId },
+            { $set: { refreshToken: null } }
+        );
+
+        res.status(200).json({
+            status: "Success",
+            message: "Logged out successfully"
         });
     } catch (err) {
         logger.error(`URL : ${req.originalUrl} | status : ${err.status} | message: ${err.message}`);

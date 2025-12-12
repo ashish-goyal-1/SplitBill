@@ -33,4 +33,10 @@ router.get('/v1/emailList', apiAuth.validateToken, controller.emailList)
 //Get User Names by emails
 router.post('/v1/names', apiAuth.validateToken, controller.getUserNames)
 
+//Refresh Token - get new access token using refresh token (no auth required)
+router.post('/v1/refresh', controller.refreshToken)
+
+//Logout - invalidate refresh token
+router.post('/v1/logout', apiAuth.validateToken, controller.logout)
+
 module.exports = router;
