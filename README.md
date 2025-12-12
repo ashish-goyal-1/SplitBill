@@ -65,6 +65,11 @@ A powerful full-stack MERN app for smart group expense tracking, optimized debt 
 - **Service Worker Caching**: PWA with offline support
 - Lazy loaded routes & optimized bundle
 
+### 🧪 Testing
+- **Jest Unit Tests** for algorithm validation
+- 15+ test cases covering correctness, edge cases, and performance
+- Run tests: `npm test`
+
 ### 🎨 UI/UX Enhancements
 - Material UI theming (dark/light toggle)
 - **PWA installable** on mobile & desktop
