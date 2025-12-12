@@ -1,13 +1,16 @@
 // theme
 import ThemeProvider from './theme';
 import Router from './routes'
+import { SocketProvider } from './utils/SocketContext';
 
 
 function App() {
   return (
-    <ThemeProvider>
-      <Router />
-    </ThemeProvider>
+    <SocketProvider>
+      <ThemeProvider>
+        <Router />
+      </ThemeProvider>
+    </SocketProvider>
   );
 }
 

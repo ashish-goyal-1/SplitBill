@@ -49,10 +49,11 @@ A powerful full-stack MERN app for smart group expense tracking, optimized debt 
 - Daily spending breakdown
 - Dashboard widgets for quick overview
 
-### 🔔 Notifications
-- Real-time in-app notifications for updates
-- Unread badge and notification drawer
-- Auto-refresh every 30 seconds
+### 🔔 Real-Time Updates & Notifications
+- **Socket.io WebSocket** for instant expense updates
+- Real-time sync when group members add/edit/delete expenses
+- In-app notifications with unread badge
+- Automatic UI refresh without page reload
 
 ### 📤 Export Reports
 - 📄 Export to PDF: Full group expense report
@@ -123,6 +124,7 @@ The settlement algorithm uses a **two-step hybrid approach** to minimize transac
 ### Frontend
 - React.js (with React Router)
 - Material UI & Emotion
+- **Socket.io-client** for real-time WebSocket
 - Axios, Formik, Yup
 - Chart.js via react-chartjs-2
 - Iconify & Simplebar
@@ -131,6 +133,7 @@ The settlement algorithm uses a **two-step hybrid approach** to minimize transac
 
 ### Backend
 - Node.js + Express.js
+- **Socket.io** for real-time WebSocket communication
 - MongoDB Atlas via Mongoose
 - **MongoDB Aggregation Pipelines** for analytics
 - JWT authentication with **Refresh Token Rotation**

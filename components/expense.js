@@ -3,6 +3,7 @@ const validator = require('../helper/validation');
 const logger = require('../helper/logger');
 const gorupDAO = require('./group')
 const notificationService = require('./notification');
+const socketHelper = require('../helper/socketHelper');
 
 /*
 Add Expense function
@@ -65,6 +66,9 @@ exports.addExpense = async (req, res) => {
                 group.groupName,
                 { expenseId: newExpense._id, amount: expense.expenseAmount }
             );
+
+            // Emit real-time socket event to group members
+            socketHelper.emitExpenseAdded(expense.groupId, newExpense, expense.expenseOwner);
 
             res.status(200).json({
                 status: "Success",
@@ -152,6 +156,9 @@ exports.editExpense = async (req, res) => {
             await gorupDAO.clearSplit(oldExpense.groupId, oldExpense.expenseAmount, oldExpense.expenseOwner, oldExpense.expenseMembers)
             await gorupDAO.addSplit(expense.groupId, expense.expenseAmount, expense.expenseOwner, expense.expenseMembers)
 
+            // Emit real-time socket event
+            socketHelper.emitExpenseUpdated(expense.groupId, expense, req.user);
+
             res.status(200).json({
                 status: "Success",
                 message: "Expense Edited",
@@ -188,6 +195,9 @@ exports.deleteExpense = async (req, res) => {
 
         //Clearing split value for the deleted expense from group table
         await gorupDAO.clearSplit(expense.groupId, expense.expenseAmount, expense.expenseOwner, expense.expenseMembers)
+
+        // Emit real-time socket event
+        socketHelper.emitExpenseDeleted(expense.groupId, req.body.id, req.user);
 
         res.status(200).json({
             status: "Success",

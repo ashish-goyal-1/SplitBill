@@ -1,10 +1,12 @@
 var dotenv = require('dotenv')
 var express = require('express')
+var http = require('http')
 var compression = require('compression')
 var logger = require('./helper/logger')
 var requestLogger = require('./helper/requestLogger')
 var apiAuth = require('./helper/apiAuthentication')
 var cors = require('cors')
+var socketHelper = require('./helper/socketHelper')
 
 const path = require('path');
 dotenv.config()
@@ -16,6 +18,12 @@ var notificationRouter = require('./routes/notificationRouter')
 var analyticsRouter = require('./routes/analyticsRouter')
 
 var app = express()
+
+// Create HTTP server for Socket.io
+var server = http.createServer(app)
+
+// Initialize Socket.io for real-time communication
+socketHelper.initializeSocket(server)
 
 // Gzip compression - reduces response size by ~70%
 app.use(compression())
@@ -47,8 +55,11 @@ app.all('*', (req, res) => {
 })
 
 const port = process.env.PORT || 3001
-app.listen(port, (err) => {
+
+// Use server.listen instead of app.listen for Socket.io
+server.listen(port, (err) => {
     console.log(`Server started in PORT | ${port}`)
+    console.log(`Socket.io ready for real-time connections`)
     logger.info(`Server started in PORT | ${port}`)
 
     // Initialize email scheduler
