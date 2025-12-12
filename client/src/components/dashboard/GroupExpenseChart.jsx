@@ -40,16 +40,16 @@ export const GroupExpenseChart = () => {
 
     const options = {
         maintainAspectRatio: false,
-        plugins: {   
+        plugins: {
             datalabels: {
-                display:false,
+                display: false,
                 formatter: (value) => {
-                  return convertToCurrency(value) ;
+                    return convertToCurrency(value);
                 }
-              },
+            },
             legend: {
                 display: true,
-                position: mdUp? 'right' : 'bottom',
+                position: mdUp ? 'right' : 'bottom',
                 labels: {
                     padding: 10
                 },
@@ -66,28 +66,27 @@ export const GroupExpenseChart = () => {
                 await getUserGroupsService(profile, setAlert, setAlertMessage)
             setGroupExp(group_exp.data.groups)
             setLoading(false)
-            console.log(group_exp.data.groups)
         }
         getGroupExpense()
 
     }, [])
 
     return (
-        <>{loading? <Loading/> : 
-        <Box sx={{
-            p: 5,
-            bgcolor: 'background.paper',
-            borderRadius: 2,
-            boxShadow: 5,
-        }}>
-            <Typography variant="h6" mb={2}>
-                Groupwise Expense Chart
-            </Typography>
-            <AlertBanner showAlert={alert} alertMessage={alertMessage} severity = 'error' />
-            <Box height={500}>
-            <Pie data={data} options={options} plugins={[ChartDataLabels]}/>
-            </Box>
-        </Box>}
+        <>{loading ? <Loading /> :
+            <Box sx={{
+                p: 5,
+                bgcolor: 'background.paper',
+                borderRadius: 2,
+                boxShadow: 5,
+            }}>
+                <Typography variant="h6" mb={2}>
+                    Groupwise Expense Chart
+                </Typography>
+                <AlertBanner showAlert={alert} alertMessage={alertMessage} severity='error' />
+                <Box height={500}>
+                    <Pie data={data} options={options} plugins={[ChartDataLabels]} />
+                </Box>
+            </Box>}
         </>
     )
 }
