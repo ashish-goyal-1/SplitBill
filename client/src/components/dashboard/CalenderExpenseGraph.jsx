@@ -6,7 +6,6 @@ import Loading from "../loading";
 import { getUserDailyExpService, getUserMonthlyExpService } from "../../services/expenseServices";
 import { monthNamesMMM } from "../../utils/helper";
 import useResponsive from "../../theme/hooks/useResponsive";
-import { set } from "mongoose";
 import AlertBanner from "../AlertBanner";
 
 export const CalenderExpenseGraph = () => {
@@ -24,11 +23,11 @@ export const CalenderExpenseGraph = () => {
     }
 
     const data = {
-        labels: montlyView? userDailyExp?.map(daily => (monthNamesMMM[daily._id.month-1] + '-' + daily._id.date)):userMonthlyExp?.map(monthly => ( monthNamesMMM[monthly._id.month-1])),
+        labels: montlyView ? userDailyExp?.map(daily => (monthNamesMMM[daily._id.month - 1] + '-' + daily._id.date)) : userMonthlyExp?.map(monthly => (monthNamesMMM[monthly._id.month - 1])),
         datasets: [
             {
-                label:  montlyView? "Daily expense" : "Monthly expense",
-                data: montlyView? userDailyExp?.map(daily => (daily.amount)):userMonthlyExp?.map(monthly => (monthly.amount)),
+                label: montlyView ? "Daily expense" : "Monthly expense",
+                data: montlyView ? userDailyExp?.map(daily => (daily.amount)) : userMonthlyExp?.map(monthly => (monthly.amount)),
                 backgroundColor: 'rgba(255, 99, 132, 0.5)',
                 borderColor: 'rgba(255, 99, 132, 1)',
                 fill: true
@@ -42,7 +41,7 @@ export const CalenderExpenseGraph = () => {
         plugins: {
             title: {
                 display: false,
-                text: montlyView? "Daily expense graph" : "Monthly expense graph",
+                text: montlyView ? "Daily expense graph" : "Monthly expense graph",
                 font: { size: 18 },
                 padding: 19,
                 position: 'bottom'
@@ -60,45 +59,45 @@ export const CalenderExpenseGraph = () => {
     };
 
     useEffect(() => {
-    const getUserDetails = async() => {
-        setLoading(true);
-        const userIdJson = {
-            user: profile.emailId
-        }
-        const response_group_monthly = await getUserMonthlyExpService(userIdJson, setAlert, setAlertMessage)
-        setUserMonthlyExp(response_group_monthly.data.data)
-        const response_group_daily = await getUserDailyExpService(userIdJson, setAlert, setAlertMessage)
-        setUserDailyExp(response_group_daily.data.data)
-        setLoading(false)
+        const getUserDetails = async () => {
+            setLoading(true);
+            const userIdJson = {
+                user: profile.emailId
+            }
+            const response_group_monthly = await getUserMonthlyExpService(userIdJson, setAlert, setAlertMessage)
+            setUserMonthlyExp(response_group_monthly.data.data)
+            const response_group_daily = await getUserDailyExpService(userIdJson, setAlert, setAlertMessage)
+            setUserDailyExp(response_group_daily.data.data)
+            setLoading(false)
 
-    }   
-    getUserDetails();
-        
+        }
+        getUserDetails();
+
 
     }, [])
     return (
-        <>{loading? <Loading/> : 
-        <Box sx={{
-            bgcolor: 'background.paper',
-            borderRadius: 2,
-            boxShadow: 5,
-            ...(mdUp && {p:5}),
-            ...(!mdUp && {p:1})
-        }}
-        >
-            <AlertBanner showAlert={alert} alertMessage={alertMessage} severity='error' />
-            <Typography variant="h6">
-                Expense Graph - {montlyView? "Daily View" : "Monthly View"}
-            </Typography>
-            
-            <Box height={350} my={2}>
-                <Line data={data} options={options} />
-            </Box>
-            <FormGroup>
-                <FormControlLabel control={<Switch defaultChecked onClick={toggleMonthlyView} />} label="Monthly expense view" />
-            </FormGroup>
+        <>{loading ? <Loading /> :
+            <Box sx={{
+                bgcolor: 'background.paper',
+                borderRadius: 2,
+                boxShadow: 5,
+                ...(mdUp && { p: 5 }),
+                ...(!mdUp && { p: 1 })
+            }}
+            >
+                <AlertBanner showAlert={alert} alertMessage={alertMessage} severity='error' />
+                <Typography variant="h6">
+                    Expense Graph - {montlyView ? "Daily View" : "Monthly View"}
+                </Typography>
 
-        </Box>}
+                <Box height={350} my={2}>
+                    <Line data={data} options={options} />
+                </Box>
+                <FormGroup>
+                    <FormControlLabel control={<Switch defaultChecked onClick={toggleMonthlyView} />} label="Monthly expense view" />
+                </FormGroup>
+
+            </Box>}
         </>
     )
 }

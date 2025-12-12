@@ -11,8 +11,6 @@ import AccountPopover from './AccountPopover';
 
 import NotificationsPopover from './NotificationsPopover'
 
-import Searchbar from './Searchbar';
-
 // ----------------------------------------------------------------------
 
 const DRAWER_WIDTH = 280;
@@ -53,7 +51,6 @@ export default function DashboardNavbar({ onOpenSidebar }) {
           <Iconify icon="eva:menu-2-fill" />
         </IconButton>
 
-        <Searchbar />
         <Box sx={{ flexGrow: 1 }} />
 
         <Stack direction="row" alignItems="center" spacing={{ xs: 0.5, sm: 1.5 }}>
