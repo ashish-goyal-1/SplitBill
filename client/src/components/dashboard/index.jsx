@@ -31,9 +31,9 @@ export default function Dashboard() {
                 user: profile.emailId
             }
             const response_expense = await getUserExpenseService(userIdJson, setAlert, setAlertMessage)
-            setUserExp(response_expense.data);
+            setUserExp(response_expense?.data);
             const response_group = await getUserGroupsService(profile)
-            if (response_group.data.groups.length == 0)
+            if (!response_group?.data?.groups || response_group.data.groups.length === 0)
                 setNewUser(true)
             setLoading(false)
 
