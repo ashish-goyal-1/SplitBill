@@ -36,7 +36,7 @@ export const ViewExpense = () => {
             }
             const response_exp = await getExpDetailsService(expenseIdJson, setAlert, setAlertMessage)
             setExpenseDetails(response_exp?.data?.expense)
-            const date =new Date(response_exp?.data?.expense?.expenseDate).toDateString()
+            const date = new Date(response_exp?.data?.expense?.expenseDate).toDateString()
             setExpenseDate(date)
             setLoading(false)
         }
@@ -74,12 +74,12 @@ export const ViewExpense = () => {
                             </Typography>
                         </Grid>
                         <Grid item md={6} xs={12}>
-                        <Typography variant='h6'>
-                            Date : {expenseDate}
+                            <Typography variant='h6'>
+                                Date : {expenseDate}
 
                             </Typography>
                         </Grid>
-                       
+
 
                         <Grid item md={6} xs={12}>
                             <Typography variant='h6'>
@@ -100,9 +100,28 @@ export const ViewExpense = () => {
                         </Grid>
 
                         <Grid item xs={12}>
-                            <Typography variant='h6' color={(theme) => theme.palette['error'].main}>
-                                Amount per person: {currencyFind(expenseDetails?.expenseCurrency) + " " + convertToCurrency(expenseDetails?.expensePerMember)}
-                            </Typography>
+                            {(!expenseDetails?.splitType || expenseDetails?.splitType === 'equal') ? (
+                                <Typography variant='h6' color={(theme) => theme.palette['error'].main}>
+                                    Amount per person: {currencyFind(expenseDetails?.expenseCurrency) + " " + convertToCurrency(expenseDetails?.expensePerMember)}
+                                </Typography>
+                            ) : (
+                                <>
+                                    <Typography variant='h6' color={(theme) => theme.palette['primary'].main} sx={{ mb: 1 }}>
+                                        Split Type: {expenseDetails?.splitType === 'exact' ? '💵 Exact Amounts' : '📊 Percentage'}
+                                    </Typography>
+                                    <Box sx={{ pl: 2 }}>
+                                        {expenseDetails?.splitDetails?.map((detail) => (
+                                            <Typography key={detail.email} variant='body1' sx={{ mb: 0.5 }}>
+                                                {detail.email.split('@')[0]}:
+                                                <strong style={{ marginLeft: 8, color: '#e74c3c' }}>
+                                                    {currencyFind(expenseDetails?.expenseCurrency)}{convertToCurrency(detail.amount)}
+                                                    {expenseDetails?.splitType === 'percentage' && ` (${detail.percentage}%)`}
+                                                </strong>
+                                            </Typography>
+                                        ))}
+                                    </Box>
+                                </>
+                            )}
                         </Grid>
 
                         <Grid item xs={12}>

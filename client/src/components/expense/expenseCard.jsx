@@ -1,4 +1,4 @@
-import { Grid, Box, styled, Typography, autocompleteClasses, Popover, MenuList, MenuItem, ListItemIcon, ListItemText, Modal, Stack, Button } from '@mui/material'
+import { Grid, Box, styled, Typography, autocompleteClasses, Popover, MenuList, MenuItem, ListItemIcon, ListItemText, Modal, Stack, Button, Chip } from '@mui/material'
 import React, { useState } from 'react'
 import useResponsive from '../../theme/hooks/useResponsive';
 import PropTypes from 'prop-types';
@@ -39,7 +39,7 @@ const modelStyle = {
 };
 
 
-export default function ExpenseCard({ expenseId, expenseName, expenseAmount, expensePerMember, expenseOwner, expenseDate, currencyType }) {
+export default function ExpenseCard({ expenseId, expenseName, expenseAmount, expensePerMember, expenseOwner, expenseDate, currencyType, splitType }) {
     const mdUp = useResponsive('up', 'md');
     const [anchorEl, setAnchorEl] = useState(null);
     const [deleteConfirm, setDeleteConfirm] = useState(false)
@@ -119,6 +119,19 @@ export default function ExpenseCard({ expenseId, expenseName, expenseAmount, exp
                 >
                     Paid by, <br />{expenseOwner}
                 </Typography>
+                {splitType && splitType !== 'equal' && (
+                    <Chip
+                        size="small"
+                        label={splitType === 'percentage' ? '📊 %Split' : '💵 Exact'}
+                        sx={{
+                            mt: 0.5,
+                            fontSize: '0.65rem',
+                            height: 18,
+                            bgcolor: splitType === 'percentage' ? 'info.lighter' : 'success.lighter',
+                            color: splitType === 'percentage' ? 'info.dark' : 'success.dark'
+                        }}
+                    />
+                )}
 
             </Grid>
             <Grid item xs={3}>
@@ -127,12 +140,18 @@ export default function ExpenseCard({ expenseId, expenseName, expenseAmount, exp
                     sx={{
                         fontSize: 13
                     }}>
-                    Per preson
+                    {(!splitType || splitType === 'equal') ? 'Per person' : 'Split'}
                 </Typography>
                 <Typography
                     color={(theme) => theme.palette['error'].dark}
                 >
-                    <b>{currencyFind(currencyType)} {convertToCurrency(expensePerMember)}</b>
+                    {(!splitType || splitType === 'equal') ? (
+                        <b>{currencyFind(currencyType)} {convertToCurrency(expensePerMember)}</b>
+                    ) : (
+                        <b style={{ fontSize: '0.85rem' }}>
+                            {splitType === 'exact' ? 'By Amount' : 'By %'}
+                        </b>
+                    )}
                 </Typography>
             </Grid>
             <Grid item xs={1}>

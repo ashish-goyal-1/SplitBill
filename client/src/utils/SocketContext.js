@@ -121,6 +121,14 @@ export const SocketProvider = ({ children }) => {
         }
     }, [socket]);
 
+    // Subscribe to group invite events
+    const onGroupInvite = useCallback((callback) => {
+        if (socket) {
+            socket.on('group-invite', callback);
+            return () => socket.off('group-invite', callback);
+        }
+    }, [socket]);
+
     const value = {
         socket,
         isConnected,
@@ -133,6 +141,7 @@ export const SocketProvider = ({ children }) => {
         onSettlement,
         onGroupUpdated,
         onNotification,
+        onGroupInvite,
     };
 
     return (

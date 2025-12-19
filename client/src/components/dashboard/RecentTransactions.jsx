@@ -32,30 +32,31 @@ export const RecentTransactions = () => {
 
     return (
         <>
-        {loading ? <Loading/> : 
-        <Box sx={{
-            boxShadow: 5,
-            bgcolor: 'background.paper',
-            borderRadius: 2,
-        }}>
-            <AlertBanner showAlert={alert} alertMessage={alertMessage} severity='error' />
-            <Typography variant="h6" p={2} >
-                Your Recent transactions,
-            </Typography>
-            {recentExp?.map(myExpense => (
+            {loading ? <Loading /> :
+                <Box sx={{
+                    boxShadow: 5,
+                    bgcolor: 'background.paper',
+                    borderRadius: 2,
+                }}>
+                    <AlertBanner showAlert={alert} alertMessage={alertMessage} severity='error' />
+                    <Typography variant="h6" p={2} >
+                        Your Recent transactions,
+                    </Typography>
+                    {recentExp?.map(myExpense => (
 
-                <ExpenseCard
-                    key={myExpense?._id}
-                    expenseId={myExpense?._id}
-                    expenseName={myExpense?.expenseName}
-                    expenseAmount={myExpense?.expenseAmount}
-                    expensePerMember={myExpense?.expensePerMember}
-                    expenseOwner={myExpense?.expenseOwner}
-                    expenseDate={myExpense?.expenseDate}
-                    currencyType={myExpense?.expenseCurrency}
-                />
-            ))}
-        </Box>}
+                        <ExpenseCard
+                            key={myExpense?._id}
+                            expenseId={myExpense?._id}
+                            expenseName={myExpense?.expenseName}
+                            expenseAmount={myExpense?.expenseAmount}
+                            expensePerMember={myExpense?.expensePerMember}
+                            expenseOwner={myExpense?.expenseOwner}
+                            expenseDate={myExpense?.expenseDate}
+                            currencyType={myExpense?.expenseCurrency}
+                            splitType={myExpense?.splitType}
+                        />
+                    ))}
+                </Box>}
         </>
     )
 }

@@ -1,7 +1,10 @@
-import { useEffect, useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { useState } from 'react';
+import { Outlet, Navigate } from 'react-router-dom';
 // material
 import { styled } from '@mui/material/styles';
+import { Box, CircularProgress } from '@mui/material';
+// auth
+import { useAuth } from '../../contexts/AuthContext';
 //
 import DashboardNavbar from './DashboardNavbar';
 import DashboardSidebar from './DashboardSidebar';
@@ -30,19 +33,39 @@ const MainStyle = styled('div')(({ theme }) => ({
   }
 }));
 
+// Loading screen while checking auth
+const LoadingScreen = () => (
+  <Box
+    sx={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: '100vh',
+      background: '#f5f5f5'
+    }}
+  >
+    <CircularProgress size={40} />
+  </Box>
+);
+
 // ----------------------------------------------------------------------
 
 export default function DashboardLayout() {
   const [open, setOpen] = useState(false);
-  const user = JSON.parse(localStorage.getItem('profile'))
 
- useEffect(() => {
-   //If user logged in the page is auto directed to dashboard
-  if(user==null){
-    window.location.href="/"
-  } 
- }, [])
- 
+  // Use the centralized auth context instead of direct localStorage access
+  const { isLoading, isAuthenticated } = useAuth();
+
+  // Show loading while checking auth
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
+  // Redirect to login if not authenticated
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+
   return (
     <RootStyle>
       <DashboardNavbar onOpenSidebar={() => setOpen(true)} />

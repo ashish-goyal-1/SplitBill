@@ -5,8 +5,7 @@ export default function Copyright() {
   const developer = {
     name: "Ashish Goyal",
     github: "https://github.com/ashish-goyal-1/SplitBill",
-    linkedin: "https://www.linkedin.com/in/ashish-goyal-66422b257/",
-    email: "goyalashish809@gmail.com"
+    linkedin: "https://www.linkedin.com/in/ashish-goyal-66422b257/"
   };
 
   return (
@@ -38,16 +37,6 @@ export default function Copyright() {
             sx={{ color: 'text.secondary', '&:hover': { color: '#0077B5' } }}
           >
             <Iconify icon="mdi:linkedin" width={18} />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Email">
-          <IconButton
-            component="a"
-            href={`mailto:${developer.email}`}
-            size="small"
-            sx={{ color: 'text.secondary', '&:hover': { color: '#EA4335' } }}
-          >
-            <Iconify icon="mdi:email" width={18} />
           </IconButton>
         </Tooltip>
       </Stack>

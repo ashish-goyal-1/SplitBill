@@ -3,6 +3,8 @@ const validator = require('../helper/validation')
 const logger = require('../helper/logger')
 const splitCalculator = require('../helper/split')
 const emailService = require('../helper/emailService')
+const socketHelper = require('../helper/socketHelper')
+const activityLogger = require('../helper/activityLogger')
 
 /*
 Create Group Function This function basically create new groups
@@ -21,31 +23,6 @@ exports.createGroup = async (req, res) => {
         if (validator.notNull(newGroup.groupName) &&
             validator.currencyValidation(newGroup.groupCurrency)) {
 
-            /*
-            Split Json is used to store the user split value (how much a person owes)
-            When the Group is created all members are assigned the split value as 0    
-            */
-            var splitJson = {}
-
-            for (var user of newGroup.groupMembers) {
-                //Validating the group Members exist in the DB 
-                var memberCheck = await validator.userValidation(user)
-                if (!memberCheck) {
-                    var err = new Error('Invalid member id')
-                    err.status = 400
-                    throw err
-                }
-
-                //Adding user to the split Json and init with 0 
-                splitJson[user] = 0
-            }
-
-            /*
-            Split Json will now contain an json with user email as the key and the split amount (currently 0) as the value
-            We now store this splitJson object to the newGroup model so it can be stored to DB directly
-            */
-            newGroup.split = splitJson
-
             //Validating the group Owner exist in the DB 
             var ownerCheck = await validator.userValidation(newGroup.groupOwner)
             if (!ownerCheck) {
@@ -54,11 +31,100 @@ exports.createGroup = async (req, res) => {
                 throw err
             }
 
-            var id = await model.Group.create(newGroup)
+            // Get owner's recent contacts (people they've been in groups with)
+            const ownerGroups = await model.Group.find(
+                { groupMembers: newGroup.groupOwner },
+                { groupMembers: 1 }
+            );
+            const recentContacts = new Set();
+            for (const group of ownerGroups) {
+                for (const member of group.groupMembers) {
+                    if (member !== newGroup.groupOwner) {
+                        recentContacts.add(member);
+                    }
+                }
+            }
+
+            /*
+            Split Json is used to store the user split value (how much a person owes)
+            When the Group is created all members are assigned the split value as 0    
+            */
+            var splitJson = {}
+            const confirmedMembers = [newGroup.groupOwner]; // Owner is always confirmed
+            const pendingMembers = [];
+            splitJson[newGroup.groupOwner] = 0; // Owner always in split
+
+            for (var user of newGroup.groupMembers) {
+                // Skip owner (already added)
+                if (user === newGroup.groupOwner) continue;
+
+                //Validating the group Members exist in the DB 
+                var memberCheck = await validator.userValidation(user)
+                if (!memberCheck) {
+                    var err = new Error(`User ${user} is not registered on SplitBill`)
+                    err.status = 400
+                    throw err
+                }
+
+                // Check if this user is a recent contact of the owner
+                if (recentContacts.has(user)) {
+                    // Recent contact - add directly to group
+                    confirmedMembers.push(user);
+                    splitJson[user] = 0;
+                } else {
+                    // Stranger - add to pending, they need to accept invite
+                    pendingMembers.push(user);
+                    // Note: Don't add to splitJson yet - will be added when they accept
+                }
+            }
+
+            /*
+            Split Json will now contain an json with user email as the key and the split amount (currently 0) as the value
+            We now store this splitJson object to the newGroup model so it can be stored to DB directly
+            */
+            newGroup.groupMembers = confirmedMembers;
+            newGroup.pendingMembers = pendingMembers;
+            newGroup.split = splitJson
+
+            var createdGroup = await model.Group.create(newGroup)
+
+            // Send invite emails and real-time notifications to pending members
+            if (pendingMembers.length > 0) {
+                const ownerUser = await model.User.findOne({ emailId: newGroup.groupOwner });
+                const ownerName = ownerUser ? `${ownerUser.firstName} ${ownerUser.lastName || ''}`.trim() : newGroup.groupOwner;
+
+                for (const pendingEmail of pendingMembers) {
+                    // Send email
+                    sendGroupInviteEmail(pendingEmail, newGroup.groupName, ownerName, ownerUser?.emailId || newGroup.groupOwner)
+                        .catch(err => logger.error(`Failed to send invite email to ${pendingEmail}: ${err.message}`));
+
+                    // Emit real-time socket notification
+                    socketHelper.emitGroupInvite(pendingEmail, {
+                        groupId: createdGroup._id,
+                        groupName: newGroup.groupName,
+                        inviterName: ownerName,
+                        inviterEmail: newGroup.groupOwner
+                    });
+                }
+            }
+
+            // Log group creation activity
+            await activityLogger.createActivityLog(
+                createdGroup._id,
+                'GROUP_CREATED',
+                `${newGroup.groupOwner.split('@')[0]} created group '${newGroup.groupName}'`,
+                newGroup.groupOwner,
+                { confirmedMembers: confirmedMembers.length, pendingInvites: pendingMembers.length }
+            );
+
             res.status(200).json({
                 status: "Success",
-                message: "Group Creation Success",
-                Id: id._id
+                message: pendingMembers.length > 0
+                    ? `Group created! ${pendingMembers.length} invitation(s) sent.`
+                    : "Group Creation Success",
+                Id: createdGroup._id,
+                confirmedMembers: confirmedMembers.length,
+                pendingInvites: pendingMembers.length
             })
         }
     } catch (err) {
@@ -68,6 +134,57 @@ exports.createGroup = async (req, res) => {
         })
     }
 }
+
+/**
+ * Helper function to send group invite email
+ */
+async function sendGroupInviteEmail(toEmail, groupName, inviterName, inviterEmail) {
+    const appUrl = process.env.APP_URL || 'http://localhost:3000';
+
+    const html = `
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="utf-8"></head>
+        <body style="font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f5; padding: 20px;">
+            <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
+                    <h1 style="color: white; margin: 0; font-size: 24px;">🎉 Group Invitation</h1>
+                </div>
+                <div style="padding: 30px; text-align: center;">
+                    <p style="font-size: 18px; color: #333;">
+                        <strong>${inviterName}</strong> has invited you to join
+                    </p>
+                    <div style="background: #f8f9fa; border-radius: 10px; padding: 20px; margin: 20px 0;">
+                        <p style="font-size: 28px; font-weight: bold; color: #667eea; margin: 0;">
+                            ${groupName}
+                        </p>
+                    </div>
+                    <p style="color: #666;">
+                        Log in to SplitBill to accept or decline this invitation.
+                    </p>
+                    <div style="margin-top: 20px;">
+                        <a href="${appUrl}" 
+                           style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 25px; font-weight: bold;">
+                            View Invitation
+                        </a>
+                    </div>
+                </div>
+                <div style="background: #f8f9fa; padding: 20px; text-align: center; color: #888; font-size: 12px;">
+                    Sent via SplitBill | Invited by ${inviterEmail}
+                </div>
+            </div>
+        </body>
+        </html>
+    `;
+
+    return emailService.sendEmail(
+        toEmail,
+        `🎉 You're invited to "${groupName}" on SplitBill`,
+        html
+    );
+}
+
+
 
 
 /*
@@ -278,6 +395,15 @@ exports.makeSettlement = async (req, res) => {
             currencySymbol
         ).catch(err => logger.error(`Email error: ${err.message}`));
 
+        // Log settlement activity
+        await activityLogger.createActivityLog(
+            req.body.groupId,
+            'SETTLEMENT_MADE',
+            `${req.body.settleFrom.split('@')[0]} paid ${currencySymbol}${req.body.settleAmount} to ${req.body.settleTo.split('@')[0]}`,
+            req.body.settleFrom,
+            { amount: req.body.settleAmount, from: req.body.settleFrom, to: req.body.settleTo }
+        );
+
         res.status(200).json({
             message: "Settlement successfully!",
             status: "Success",
@@ -296,35 +422,40 @@ exports.makeSettlement = async (req, res) => {
 /*
 Add Split function 
 This function is called when a new expense is added 
-This function updates the member split amount present in the goroup 
-Accepts gorupId
-        per person exp
-        exp owner 
-        exp members 
-it will add split to the owner and deduct from the remaining members 
+This function updates the member split amount present in the group 
+Accepts: groupId - the group ID
+         expense - the expense object containing splitDetails with per-member amounts
+It will add split to the owner and deduct from each member based on splitDetails
 This function is not a direct API hit - it is called by add expense function 
 */
-exports.addSplit = async (groupId, expenseAmount, expenseOwner, expenseMembers) => {
+exports.addSplit = async (groupId, expense) => {
     var group = await model.Group.findOne({
         _id: groupId
     })
-    group.groupTotal += expenseAmount
-    group.split[0][expenseOwner] += expenseAmount
-    expensePerPerson = expenseAmount / expenseMembers.length
-    expensePerPerson = Math.round((expensePerPerson + Number.EPSILON) * 100) / 100;
-    //Updating the split values per user 
-    for (var user of expenseMembers) {
-        group.split[0][user] -= expensePerPerson
+
+    const expenseAmount = expense.expenseAmount;
+    const expenseOwner = expense.expenseOwner;
+    const splitDetails = expense.splitDetails || [];
+
+    group.groupTotal += expenseAmount;
+
+    // Credit the payer (expense owner)
+    group.split[0][expenseOwner] += expenseAmount;
+
+    // Debit each member based on their splitDetails amount
+    for (const detail of splitDetails) {
+        group.split[0][detail.email] -= detail.amount;
     }
 
-    //Nullifying split - check if the group balance is zero else added the diff to owner 
-    let bal = 0
-    for (val of Object.entries(group.split[0])) {
-        bal += val[1]
+    // Nullifying floating point errors - ensure group balance is zero
+    let bal = 0;
+    for (const val of Object.entries(group.split[0])) {
+        bal += val[1];
     }
-    group.split[0][expenseOwner] -= bal
+    group.split[0][expenseOwner] -= bal;
     group.split[0][expenseOwner] = Math.round((group.split[0][expenseOwner] + Number.EPSILON) * 100) / 100;
-    //Updating back the split values to the gorup 
+
+    // Updating back the split values to the group 
     return await model.Group.updateOne({
         _id: groupId
     }, group)
@@ -333,30 +464,48 @@ exports.addSplit = async (groupId, expenseAmount, expenseOwner, expenseMembers) 
 /*
 Clear Split function 
 This function is used to clear the split caused due to a prev expense 
-This is used guring edit expense or delete expense operation 
+This is used during edit expense or delete expense operation 
 Works in the reverse of addSplit function 
+Accepts: groupId - the group ID
+         expense - the expense object containing splitDetails with per-member amounts
 */
-exports.clearSplit = async (groupId, expenseAmount, expenseOwner, expenseMembers) => {
+exports.clearSplit = async (groupId, expense) => {
     var group = await model.Group.findOne({
         _id: groupId
     })
-    group.groupTotal -= expenseAmount
-    group.split[0][expenseOwner] -= expenseAmount
-    expensePerPerson = expenseAmount / expenseMembers.length
-    expensePerPerson = Math.round((expensePerPerson + Number.EPSILON) * 100) / 100;
-    //Updating the split values per user 
-    for (var user of expenseMembers) {
-        group.split[0][user] += expensePerPerson
+
+    const expenseAmount = expense.expenseAmount;
+    const expenseOwner = expense.expenseOwner;
+    // For old expenses that might not have splitDetails, generate them from equal split
+    let splitDetails = expense.splitDetails;
+    if (!splitDetails || splitDetails.length === 0) {
+        const expenseMembers = expense.expenseMembers || [];
+        const perMember = expenseAmount / expenseMembers.length;
+        splitDetails = expenseMembers.map(email => ({
+            email,
+            amount: Math.round((perMember + Number.EPSILON) * 100) / 100
+        }));
     }
 
-    //Nullifying split - check if the group balance is zero else added the diff to owner 
-    let bal = 0
-    for (val of Object.entries(group.split[0])) {
-        bal += val[1]
+    group.groupTotal -= expenseAmount;
+
+    // Un-credit the payer (expense owner)
+    group.split[0][expenseOwner] -= expenseAmount;
+
+    // Un-debit each member based on their splitDetails amount
+    for (const detail of splitDetails) {
+        group.split[0][detail.email] += detail.amount;
     }
-    group.split[0][expenseOwner] -= bal
+
+    // Nullifying floating point errors - ensure group balance is zero
+    let bal = 0;
+    for (const val of Object.entries(group.split[0])) {
+        bal += val[1];
+    }
+    group.split[0][expenseOwner] -= bal;
     group.split[0][expenseOwner] = Math.round((group.split[0][expenseOwner] + Number.EPSILON) * 100) / 100;
-    //Updating back the split values to the gorup 
+
+    // Updating back the split values to the group 
     return await model.Group.updateOne({
         _id: groupId
     }, group)
@@ -624,6 +773,206 @@ exports.sendNudgeReminder = async (req, res) => {
                 status: "Warning"
             });
         }
+    } catch (err) {
+        logger.error(`URL : ${req.originalUrl} | status : ${err.status} | message: ${err.message}`);
+        res.status(err.status || 500).json({
+            message: err.message
+        });
+    }
+}
+
+/**
+ * Get all pending invites for a user
+ * Returns groups where user is in pendingMembers array
+ */
+exports.getPendingInvites = async (req, res) => {
+    try {
+        const userEmail = req.body.email || req.user;
+
+        // Find all groups where user is in pendingMembers
+        const pendingGroups = await model.Group.find(
+            { pendingMembers: userEmail },
+            { groupName: 1, groupOwner: 1, groupCategory: 1, groupCurrency: 1, groupMembers: 1, _id: 1 }
+        );
+
+        // Get inviter names for better UX
+        const groupsWithInviters = await Promise.all(pendingGroups.map(async (group) => {
+            const owner = await model.User.findOne(
+                { emailId: group.groupOwner },
+                { firstName: 1, lastName: 1, emailId: 1 }
+            );
+            return {
+                groupId: group._id,
+                groupName: group.groupName,
+                groupCategory: group.groupCategory,
+                groupCurrency: group.groupCurrency,
+                memberCount: group.groupMembers.length,
+                inviter: owner ? {
+                    name: `${owner.firstName} ${owner.lastName || ''}`.trim(),
+                    email: owner.emailId
+                } : { name: group.groupOwner, email: group.groupOwner }
+            };
+        }));
+
+        res.status(200).json({
+            status: "Success",
+            pendingInvites: groupsWithInviters,
+            count: groupsWithInviters.length
+        });
+    } catch (err) {
+        logger.error(`URL : ${req.originalUrl} | status : ${err.status} | message: ${err.message}`);
+        res.status(err.status || 500).json({
+            message: err.message
+        });
+    }
+}
+
+/**
+ * Accept a group invitation
+ * Moves user from pendingMembers to groupMembers and initializes split
+ */
+exports.acceptInvite = async (req, res) => {
+    try {
+        const { groupId } = req.body;
+        const userEmail = req.user;
+
+        validator.notNull(groupId);
+
+        // Find the group
+        const group = await model.Group.findById(groupId);
+        if (!group) {
+            return res.status(404).json({ message: "Group not found" });
+        }
+
+        // Check if user is in pendingMembers
+        if (!group.pendingMembers.includes(userEmail)) {
+            return res.status(400).json({ message: "No pending invitation found" });
+        }
+
+        // Check if already a member
+        if (group.groupMembers.includes(userEmail)) {
+            return res.status(400).json({ message: "Already a member of this group" });
+        }
+
+        // Move from pending to members
+        const updatedPending = group.pendingMembers.filter(m => m !== userEmail);
+        const updatedMembers = [...group.groupMembers, userEmail];
+
+        // Initialize split for new member
+        let updatedSplit = group.split;
+        if (Array.isArray(updatedSplit) && updatedSplit.length > 0) {
+            updatedSplit[0][userEmail] = 0;
+        } else {
+            updatedSplit = [{ [userEmail]: 0 }];
+        }
+
+        await model.Group.updateOne(
+            { _id: groupId },
+            {
+                $set: {
+                    groupMembers: updatedMembers,
+                    pendingMembers: updatedPending,
+                    split: updatedSplit
+                }
+            }
+        );
+
+        // Notify group owner
+        const notificationService = require('./notification');
+        await notificationService.createNotification(
+            group.groupOwner,
+            'invite_accepted',
+            'Invitation Accepted',
+            `${userEmail} has joined "${group.groupName}"`,
+            groupId,
+            group.groupName
+        );
+
+        res.status(200).json({
+            status: "Success",
+            message: `You have joined "${group.groupName}"!`,
+            groupId: groupId
+        });
+    } catch (err) {
+        logger.error(`URL : ${req.originalUrl} | status : ${err.status} | message: ${err.message}`);
+        res.status(err.status || 500).json({
+            message: err.message
+        });
+    }
+}
+
+/**
+ * Decline a group invitation
+ * Removes user from pendingMembers
+ */
+exports.declineInvite = async (req, res) => {
+    try {
+        const { groupId } = req.body;
+        const userEmail = req.user;
+
+        validator.notNull(groupId);
+
+        // Find the group
+        const group = await model.Group.findById(groupId);
+        if (!group) {
+            return res.status(404).json({ message: "Group not found" });
+        }
+
+        // Check if user is in pendingMembers
+        if (!group.pendingMembers.includes(userEmail)) {
+            return res.status(400).json({ message: "No pending invitation found" });
+        }
+
+        // Remove from pending
+        const updatedPending = group.pendingMembers.filter(m => m !== userEmail);
+
+        await model.Group.updateOne(
+            { _id: groupId },
+            { $set: { pendingMembers: updatedPending } }
+        );
+
+        // Notify group owner
+        const notificationService = require('./notification');
+        await notificationService.createNotification(
+            group.groupOwner,
+            'invite_declined',
+            'Invitation Declined',
+            `${userEmail} declined to join "${group.groupName}"`,
+            groupId,
+            group.groupName
+        );
+
+        res.status(200).json({
+            status: "Success",
+            message: "Invitation declined"
+        });
+    } catch (err) {
+        logger.error(`URL : ${req.originalUrl} | status : ${err.status} | message: ${err.message}`);
+        res.status(err.status || 500).json({
+            message: err.message
+        });
+    }
+}
+
+/**
+ * Get activity logs for a group
+ */
+exports.getGroupActivity = async (req, res) => {
+    try {
+        const { groupId, limit = 50 } = req.body;
+
+        if (!groupId) {
+            var err = new Error("Group ID is required");
+            err.status = 400;
+            throw err;
+        }
+
+        const activities = await activityLogger.getGroupActivity(groupId, limit);
+
+        res.status(200).json({
+            status: "Success",
+            activities
+        });
     } catch (err) {
         logger.error(`URL : ${req.originalUrl} | status : ${err.status} | message: ${err.message}`);
         res.status(err.status || 500).json({

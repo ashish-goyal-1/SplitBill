@@ -46,6 +46,9 @@ jspm_packages/
 DB/
 .DS_Store
 
+# Documentation (internal)
+docs/
+
 # TypeScript v1 declaration files
 typings/
 

@@ -18,11 +18,20 @@ export default function Group() {
   useEffect(() => {
     const getUserGroups = async () => {
       setLoading(true)
-      const response_group = await getUserGroupsService(profile)
-      setGroup(response_group.data.groups)
+      try {
+        const response_group = await getUserGroupsService(profile)
+        setGroup(response_group?.data?.groups || [])
+      } catch (error) {
+        console.error('Error fetching groups:', error)
+        setGroup([])
+      }
       setLoading(false)
     }
-    getUserGroups()
+    if (profile?.emailId) {
+      getUserGroups()
+    } else {
+      setLoading(false)
+    }
   }, []);
 
   const checkActive = (split) => {

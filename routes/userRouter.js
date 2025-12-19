@@ -39,4 +39,19 @@ router.post('/v1/refresh', controller.refreshToken)
 //Logout - invalidate refresh token
 router.post('/v1/logout', apiAuth.validateToken, controller.logout)
 
+//Recent Contacts - get users from shared groups
+router.get('/v1/recentContacts', apiAuth.validateToken, controller.recentContacts)
+
+//Search Users - search by email or name (min 3 chars)
+router.get('/v1/search', apiAuth.validateToken, controller.searchUsers)
+
+//Send Invite - invite non-registered user via email
+router.post('/v1/sendInvite', apiAuth.validateToken, controller.sendInvite)
+
+// Email Verification & Password Reset Routes (no auth required)
+router.get('/v1/verify/:token', controller.verifyEmail)
+router.post('/v1/resendVerification', controller.resendVerification)
+router.post('/v1/forgotPassword', controller.forgotPassword)
+router.post('/v1/resetPassword', controller.resetPassword)
+
 module.exports = router;

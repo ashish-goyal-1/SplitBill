@@ -1,9 +1,10 @@
 const model = require('../model/schema')
 const validator = require('../helper/validation');
 const logger = require('../helper/logger');
-const gorupDAO = require('./group')
+const groupDAO = require('./group')
 const notificationService = require('./notification');
 const socketHelper = require('../helper/socketHelper');
+const activityLogger = require('../helper/activityLogger');
 
 /*
 Add Expense function
@@ -46,13 +47,62 @@ exports.addExpense = async (req, res) => {
                     throw err
                 }
             }
-            expense.expensePerMember = expense.expenseAmount / expense.expenseMembers.length
+
+            // Handle different split types
+            const splitType = expense.splitType || 'equal';
+            expense.splitType = splitType;
+
+            if (splitType === 'equal') {
+                // Equal split - auto-calculate per member
+                const perMember = expense.expenseAmount / expense.expenseMembers.length;
+                expense.expensePerMember = Math.round((perMember + Number.EPSILON) * 100) / 100;
+                expense.splitDetails = expense.expenseMembers.map(email => ({
+                    email,
+                    amount: Math.round((perMember + Number.EPSILON) * 100) / 100,
+                    percentage: null
+                }));
+            } else if (splitType === 'exact') {
+                // Exact split - validate amounts sum to total
+                if (!expense.splitDetails || expense.splitDetails.length === 0) {
+                    var err = new Error("Split details are required for exact split");
+                    err.status = 400;
+                    throw err;
+                }
+                const total = expense.splitDetails.reduce((sum, d) => sum + (d.amount || 0), 0);
+                if (Math.abs(total - expense.expenseAmount) > 0.01) {
+                    var err = new Error(`Split amounts (${total}) must equal expense amount (${expense.expenseAmount})`);
+                    err.status = 400;
+                    throw err;
+                }
+                expense.expensePerMember = null; // Not applicable for exact split
+            } else if (splitType === 'percentage') {
+                // Percentage split - validate percentages sum to 100
+                if (!expense.splitDetails || expense.splitDetails.length === 0) {
+                    var err = new Error("Split details are required for percentage split");
+                    err.status = 400;
+                    throw err;
+                }
+                const totalPct = expense.splitDetails.reduce((sum, d) => sum + (d.percentage || 0), 0);
+                if (Math.abs(totalPct - 100) > 0.01) {
+                    var err = new Error(`Percentages must sum to 100% (got ${totalPct}%)`);
+                    err.status = 400;
+                    throw err;
+                }
+                // Calculate amounts from percentages
+                expense.splitDetails = expense.splitDetails.map(d => ({
+                    email: d.email,
+                    percentage: d.percentage,
+                    amount: Math.round(((d.percentage / 100) * expense.expenseAmount + Number.EPSILON) * 100) / 100
+                }));
+                expense.expensePerMember = null;
+            }
+
             expense.expenseCurrency = group.groupCurrency
             var newExp = new model.Expense(expense)
             var newExpense = await model.Expense.create(newExp)
 
             //New expense is created now we need to update the split values present in the group 
-            var update_response = await gorupDAO.addSplit(expense.groupId, expense.expenseAmount, expense.expenseOwner, expense.expenseMembers)
+            var update_response = await groupDAO.addSplit(expense.groupId, newExpense)
 
             // Send notification to group members
             const currencySymbol = getCurrencySymbol(group.groupCurrency);
@@ -69,6 +119,15 @@ exports.addExpense = async (req, res) => {
 
             // Emit real-time socket event to group members
             socketHelper.emitExpenseAdded(expense.groupId, newExpense, expense.expenseOwner);
+
+            // Log activity
+            await activityLogger.createActivityLog(
+                expense.groupId,
+                'EXPENSE_ADDED',
+                `${expense.expenseOwner.split('@')[0]} added '${expense.expenseName}' for ${currencySymbol}${expense.expenseAmount}`,
+                expense.expenseOwner,
+                { expenseId: newExpense._id, amount: expense.expenseAmount }
+            );
 
             res.status(200).json({
                 status: "Success",
@@ -135,6 +194,55 @@ exports.editExpense = async (req, res) => {
                 }
             }
 
+            // Handle different split types
+            const splitType = expense.splitType || 'equal';
+            expense.splitType = splitType;
+
+            if (splitType === 'equal') {
+                // Equal split - auto-calculate per member
+                const perMember = expense.expenseAmount / expense.expenseMembers.length;
+                expense.expensePerMember = Math.round((perMember + Number.EPSILON) * 100) / 100;
+                expense.splitDetails = expense.expenseMembers.map(email => ({
+                    email,
+                    amount: Math.round((perMember + Number.EPSILON) * 100) / 100,
+                    percentage: null
+                }));
+            } else if (splitType === 'exact') {
+                // Exact split - validate amounts sum to total
+                if (!expense.splitDetails || expense.splitDetails.length === 0) {
+                    var err = new Error("Split details are required for exact split");
+                    err.status = 400;
+                    throw err;
+                }
+                const total = expense.splitDetails.reduce((sum, d) => sum + (d.amount || 0), 0);
+                if (Math.abs(total - expense.expenseAmount) > 0.01) {
+                    var err = new Error(`Split amounts (${total}) must equal expense amount (${expense.expenseAmount})`);
+                    err.status = 400;
+                    throw err;
+                }
+                expense.expensePerMember = null;
+            } else if (splitType === 'percentage') {
+                // Percentage split - validate percentages sum to 100
+                if (!expense.splitDetails || expense.splitDetails.length === 0) {
+                    var err = new Error("Split details are required for percentage split");
+                    err.status = 400;
+                    throw err;
+                }
+                const totalPct = expense.splitDetails.reduce((sum, d) => sum + (d.percentage || 0), 0);
+                if (Math.abs(totalPct - 100) > 0.01) {
+                    var err = new Error(`Percentages must sum to 100% (got ${totalPct}%)`);
+                    err.status = 400;
+                    throw err;
+                }
+                // Calculate amounts from percentages
+                expense.splitDetails = expense.splitDetails.map(d => ({
+                    email: d.email,
+                    percentage: d.percentage,
+                    amount: Math.round(((d.percentage / 100) * expense.expenseAmount + Number.EPSILON) * 100) / 100
+                }));
+                expense.expensePerMember = null;
+            }
+
             var expenseUpdate = await model.Expense.updateOne({
                 _id: req.body.id
 
@@ -146,18 +254,31 @@ exports.editExpense = async (req, res) => {
                     expenseAmount: expense.expenseAmount,
                     expenseOwner: expense.expenseOwner,
                     expenseMembers: expense.expenseMembers,
-                    expensePerMember: expense.expenseAmount / expense.expenseMembers.length,
+                    expensePerMember: expense.expensePerMember,
                     expenseType: expense.expenseType,
                     expenseDate: expense.expenseDate,
+                    splitType: expense.splitType,
+                    splitDetails: expense.splitDetails
                 }
             })
 
             //Updating the group split values
-            await gorupDAO.clearSplit(oldExpense.groupId, oldExpense.expenseAmount, oldExpense.expenseOwner, oldExpense.expenseMembers)
-            await gorupDAO.addSplit(expense.groupId, expense.expenseAmount, expense.expenseOwner, expense.expenseMembers)
+            await groupDAO.clearSplit(oldExpense.groupId, oldExpense)
+            await groupDAO.addSplit(expense.groupId, expense)
 
             // Emit real-time socket event
             socketHelper.emitExpenseUpdated(expense.groupId, expense, req.user);
+
+            // Log activity
+            const group = await model.Group.findById(expense.groupId);
+            const currency = getCurrencySymbol(group?.groupCurrency || 'INR');
+            await activityLogger.createActivityLog(
+                expense.groupId,
+                'EXPENSE_UPDATED',
+                `${expense.expenseOwner.split('@')[0]} updated '${expense.expenseName}' to ${currency}${expense.expenseAmount}`,
+                expense.expenseOwner,
+                { expenseId: expense.id, oldAmount: oldExpense.expenseAmount, newAmount: expense.expenseAmount }
+            );
 
             res.status(200).json({
                 status: "Success",
@@ -194,10 +315,20 @@ exports.deleteExpense = async (req, res) => {
         })
 
         //Clearing split value for the deleted expense from group table
-        await gorupDAO.clearSplit(expense.groupId, expense.expenseAmount, expense.expenseOwner, expense.expenseMembers)
+        await groupDAO.clearSplit(expense.groupId, expense)
 
         // Emit real-time socket event
         socketHelper.emitExpenseDeleted(expense.groupId, req.body.id, req.user);
+
+        // Log activity
+        const deletedBy = req.user || expense.expenseOwner;
+        await activityLogger.createActivityLog(
+            expense.groupId,
+            'EXPENSE_DELETED',
+            `${deletedBy.split('@')[0]} deleted '${expense.expenseName}'`,
+            deletedBy,
+            { expenseName: expense.expenseName, amount: expense.expenseAmount }
+        );
 
         res.status(200).json({
             status: "Success",

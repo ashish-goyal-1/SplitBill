@@ -1,4 +1,4 @@
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, Navigate } from 'react-router-dom';
 
 // @mui
 import { styled } from '@mui/material/styles';
@@ -62,12 +62,13 @@ const ContentStyle = styled('div')(({ theme }) => ({
 export default function Login() {
   const smUp = useResponsive('up', 'sm');
   const mdUp = useResponsive('up', 'md');
-  //Function to check if the user is already logged in - check localStorage 
-  const user = JSON.parse(localStorage.getItem('profile'))
-  //If user logged in to the page , it is auto directed to dashboard
-  if (user) {
-    user.accessToken && (window.location.href = configData.DASHBOARD_URL)
+  
+  // Check if user is already logged in - redirect BEFORE rendering
+  const user = JSON.parse(localStorage.getItem('profile'));
+  if (user?.accessToken) {
+    return <Navigate to={configData.DASHBOARD_URL} replace />;
   }
+  
   return (
     <>
       <RootStyle>

@@ -1,12 +1,13 @@
 import * as Yup from 'yup';
 import { useState } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import { useFormik, Form, FormikProvider } from 'formik';
 // material
-import {  Stack,  TextField, IconButton, InputAdornment,  Snackbar, Alert } from '@mui/material';
+import { Stack, TextField, IconButton, InputAdornment, Snackbar, Alert, Link, Button, Box } from '@mui/material';
 import { LoadingButton } from '@mui/lab';
 // component
 import Iconify from '../Iconify';
-import { login } from '../../services/auth';
+import { login, resendVerificationEmail } from '../../services/auth';
 
 import useResponsive from '../../theme/hooks/useResponsive';
 
@@ -17,6 +18,9 @@ export default function LoginForm() {
 
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState(" ");
+  const [unverifiedEmail, setUnverifiedEmail] = useState(null);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
 
   const [showPassword, setShowPassword] = useState(false);
 
@@ -35,7 +39,12 @@ export default function LoginForm() {
     onSubmit: async () => {
       //User Login Service call - Upon success user is redirected to dashboard 
       //Login fail snackbar displays error
-      await login(values, setShowAlert, setAlertMessage)
+      const result = await login(values, setShowAlert, setAlertMessage);
+      if (result?.code === 'EMAIL_NOT_VERIFIED') {
+        setUnverifiedEmail(result.email);
+      } else {
+        setUnverifiedEmail(null);
+      }
     },
   });
 
@@ -45,23 +54,57 @@ export default function LoginForm() {
     setShowPassword((show) => !show);
   };
 
+  const handleResendVerification = async () => {
+    if (!unverifiedEmail) return;
+    setResendLoading(true);
+    setResendSuccess(false);
+    const result = await resendVerificationEmail(unverifiedEmail, setShowAlert, setAlertMessage);
+    setResendLoading(false);
+    if (result?.status === 'Success') {
+      setResendSuccess(true);
+      setAlertMessage('Verification email sent! Please check your inbox.');
+    }
+  };
+
   return (
     <><Snackbar
-      open={showAlert}
+      open={showAlert && !unverifiedEmail}
       autoHideDuration={6000}
-       >
-         <Alert severity="error" sx={{ width: '100%' }}>
-         {alertMessage}
-        </Alert>
-      </Snackbar>
-        <FormikProvider value={formik}>
+    >
+      <Alert severity="error" sx={{ width: '100%' }}>
+        {alertMessage}
+      </Alert>
+    </Snackbar>
+      <FormikProvider value={formik}>
         <Form autoComplete="off" noValidate onSubmit={handleSubmit}>
           <Stack spacing={3}>
-            {smUp && showAlert && (
+            {smUp && showAlert && !unverifiedEmail && (
               <Alert severity="error" sx={{ width: '100%' }}>
-              {alertMessage}
-             </Alert>
+                {alertMessage}
+              </Alert>
             )}
+
+            {unverifiedEmail && (
+              <Alert
+                severity={resendSuccess ? "success" : "warning"}
+                sx={{ width: '100%' }}
+                action={
+                  !resendSuccess && (
+                    <Button
+                      color="inherit"
+                      size="small"
+                      onClick={handleResendVerification}
+                      disabled={resendLoading}
+                    >
+                      {resendLoading ? 'Sending...' : 'Resend'}
+                    </Button>
+                  )
+                }
+              >
+                {resendSuccess ? alertMessage : 'Please verify your email before logging in.'}
+              </Alert>
+            )}
+
             <TextField
               name="emailId"
               fullWidth
@@ -91,22 +134,16 @@ export default function LoginForm() {
               error={Boolean(touched.password && errors.password)}
               helperText={touched.password && errors.password} />
 
-          <LoadingButton fullWidth size="large" type="submit" variant="contained" loading={isSubmitting}>
-            Login
-          </LoadingButton>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: -1 }}>
+              <Link component={RouterLink} variant="subtitle2" to="/forgot-password" underline="hover">
+                Forgot password?
+              </Link>
+            </Box>
+
+            <LoadingButton fullWidth size="large" type="submit" variant="contained" loading={isSubmitting}>
+              Login
+            </LoadingButton>
           </Stack>
-
-          {/* <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ my: 2 }}>
-            <FormControlLabel
-              control={<Checkbox {...getFieldProps('remember')} checked={values.remember} />}
-              label="Remember me" />
-
-            <Link component={RouterLink} variant="subtitle2" to="#" underline="hover">
-              Forgot password?
-            </Link>
-          </Stack> */}
-
-          
         </Form>
       </FormikProvider></>
   );

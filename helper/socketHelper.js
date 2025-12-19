@@ -162,6 +162,21 @@ function emitGroupUpdated(groupId, group) {
     }
 }
 
+/**
+ * Emit group invite notification to user
+ * @param {string} userEmail - Email of user being invited
+ * @param {Object} invite - Invite details (groupName, inviter, etc.)
+ */
+function emitGroupInvite(userEmail, invite) {
+    if (io) {
+        io.to(`user-${userEmail}`).emit('group-invite', {
+            invite,
+            timestamp: new Date()
+        });
+        logger.info(`[Socket] Emitted group-invite to user-${userEmail}`);
+    }
+}
+
 module.exports = {
     initializeSocket,
     getIO,
@@ -170,5 +185,6 @@ module.exports = {
     emitExpenseDeleted,
     emitSettlement,
     emitNotification,
-    emitGroupUpdated
+    emitGroupUpdated,
+    emitGroupInvite
 };

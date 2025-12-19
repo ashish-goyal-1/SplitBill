@@ -8,6 +8,8 @@ import gravatarUrl from 'gravatar-url';
 
 // hooks
 import useResponsive from '../../theme/hooks/useResponsive';
+// auth
+import { useAuth } from '../../contexts/AuthContext';
 // components
 import Logo from '../../components/Logo';
 import Scrollbar from '../../components/Scrollbar';
@@ -45,7 +47,8 @@ DashboardSidebar.propTypes = {
 };
 
 export default function DashboardSidebar({ isOpenSidebar, onCloseSidebar }) {
-  const user = JSON.parse(localStorage.getItem('profile'))
+  // Use centralized auth context instead of localStorage
+  const { user } = useAuth();
 
   const { pathname } = useLocation();
 
@@ -60,43 +63,53 @@ export default function DashboardSidebar({ isOpenSidebar, onCloseSidebar }) {
 
   const renderContent = (
     <>
-    <Scrollbar
-      sx={{
-        height: 1,
-        '& .simplebar-content': { height: 1, display: 'flex', flexDirection: 'column' },
-      }}
-    >
-      <Box sx={{ px: 2.5, py: 3, display: 'inline-flex' }}>
-        <Logo />
-      </Box>
-
-      <Box sx={{ mb: 5, mx: 2.5, mt: 5 }}>
-        <Link underline="none" component={RouterLink} to={dataConfig.USER_PROFILE_URL}>
-          <AccountStyle>
-          {user&&
-        <Avatar src={gravatarUrl(user?.emailId, {size: 200, default: dataConfig.USER_DEFAULT_LOGO_URL})} alt="photoURL" />}
-            <Box sx={{ ml: 2 }}>
-              <Typography variant="subtitle2" sx={{ color: 'text.primary' }}>
-                {user?.firstName} {user?.lastName}
-              </Typography>
-              <Typography variant="span" fontSize={12} sx={{ color: 'text.secondary' }}>
-                {user?.emailId}
-              </Typography>
-            </Box>
-          </AccountStyle>
-        </Link>
-      </Box>
-
-      <NavSection navConfig={navConfig} />
-
-      <Box sx={{ flexGrow: 1 }} /> 
-    </Scrollbar> 
-     <Box sx={{display:'flex', flexDirection: 'column'}} > 
-        <Box sx={{marginTop:'auto', pb:2}}>
-          <Copyright/>
+      <Scrollbar
+        sx={{
+          height: 1,
+          '& .simplebar-content': { height: 1, display: 'flex', flexDirection: 'column' },
+        }}
+      >
+        <Box sx={{ px: 2.5, py: 3, display: 'inline-flex' }}>
+          <Logo />
         </Box>
-      </Box> 
-      </>
+
+        <Box sx={{ mb: 5, mx: 2.5, mt: 5 }}>
+          <Link underline="none" component={RouterLink} to={dataConfig.USER_PROFILE_URL}>
+            <AccountStyle>
+              {user &&
+                <Avatar src={gravatarUrl(user?.emailId, { size: 200, default: dataConfig.USER_DEFAULT_LOGO_URL })} alt="photoURL" />}
+              <Box sx={{ ml: 2, overflow: 'hidden', maxWidth: 160 }}>
+                <Typography variant="subtitle2" sx={{ color: 'text.primary' }} noWrap>
+                  {user?.firstName} {user?.lastName}
+                </Typography>
+                <Typography
+                  variant="span"
+                  fontSize={12}
+                  sx={{
+                    color: 'text.secondary',
+                    display: 'block',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {user?.emailId}
+                </Typography>
+              </Box>
+            </AccountStyle>
+          </Link>
+        </Box>
+
+        <NavSection navConfig={navConfig} />
+
+        <Box sx={{ flexGrow: 1 }} />
+      </Scrollbar>
+      <Box sx={{ display: 'flex', flexDirection: 'column' }} >
+        <Box sx={{ marginTop: 'auto', pb: 2 }}>
+          <Copyright />
+        </Box>
+      </Box>
+    </>
   );
 
   return (

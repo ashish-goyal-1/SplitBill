@@ -1,26 +1,29 @@
 import { LoadingButton } from '@mui/lab';
-import { Box, Chip, Container, FormControl, FormHelperText, Grid, InputLabel, MenuItem, OutlinedInput, Select, TextField, Typography } from '@mui/material'
+import {
+    Container, FormControl, FormHelperText, Grid, InputLabel,
+    MenuItem, Select, TextField, Typography
+} from '@mui/material'
 import { Form, FormikProvider, useFormik } from 'formik';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import * as Yup from 'yup';
-import { getEmailList } from '../../../services/auth';
 import Loading from '../../loading';
 import useResponsive from '../../../theme/hooks/useResponsive';
 import { createGroupService } from '../../../services/groupServices';
 import AlertBanner from '../../AlertBanner';
 import configData from '../../../config.json'
+import MemberSearchInput from '../MemberSearchInput';
 
 
 export default function Creategroup() {
     const mdUp = useResponsive('up', 'md');
     const profile = JSON.parse(localStorage.getItem('profile'))
     const currentUser = profile?.emailId
-    const [loading, setLoading] = useState(false);
-    const [emailList, setEmailList] = useState([]);
+    const [loading] = useState(false);
     const [alert, setAlert] = useState(false);
     const [alertMessage, setAlertMessage] = useState('');
+    const [alertSeverity, setAlertSeverity] = useState('error');
 
-    //Formink schema 
+    //Formik schema 
     const groupSchema = Yup.object().shape({
         groupName: Yup.string().required('Group name is required'),
         groupDescription: Yup.string(),
@@ -36,7 +39,6 @@ export default function Creategroup() {
             groupCategory: '',
             groupMembers: [currentUser],
             groupOwner: currentUser
-
         },
         validationSchema: groupSchema,
         onSubmit: async () => {
@@ -47,33 +49,22 @@ export default function Creategroup() {
 
     const { errors, touched, values, isSubmitting, handleSubmit, getFieldProps } = formik;
 
-    const ITEM_HEIGHT = 48;
-    const ITEM_PADDING_TOP = 8;
-    const MenuProps = {
-        PaperProps: {
-            style: {
-                maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
-                width: 250,
-            },
-        },
+    // Handle alert from MemberSearchInput
+    const handleAlert = (message, severity) => {
+        setAlert(true);
+        setAlertMessage(message);
+        setAlertSeverity(severity);
     };
 
+    // Handle member add
+    const handleAddMember = (email) => {
+        formik.setFieldValue('groupMembers', [...values.groupMembers, email]);
+    };
 
-
-
-    useEffect(() => {
-        const getEmails = async () => {
-            setLoading(true)
-            const response = await getEmailList()
-            var list = response.data.user
-            list.indexOf(currentUser) > -1 && list.splice(list.indexOf(currentUser), 1)
-            setEmailList(list)
-            setLoading(false)
-        }
-        getEmails()
-
-
-    }, []);
+    // Handle member remove
+    const handleRemoveMember = (email) => {
+        formik.setFieldValue('groupMembers', values.groupMembers.filter(m => m !== email));
+    };
 
     return (
         <Container>
@@ -82,7 +73,7 @@ export default function Creategroup() {
                     <Typography variant="h4" pb={2} mb={3}>
                         Create New group
                     </Typography>
-                    <AlertBanner showAlert={alert} alertMessage={alertMessage} severity='error' />
+                    <AlertBanner showAlert={alert} alertMessage={alertMessage} severity={alertSeverity} />
                     <FormikProvider value={formik}>
                         <Form autoComplete="off" noValidate onSubmit={handleSubmit}>
                             <Grid container spacing={3} sx={{ maxWidth: 800 }}>
@@ -112,34 +103,17 @@ export default function Creategroup() {
                                         helperText={touched.groupDescription && errors.groupDescription}
                                     />
                                 </Grid>
+
+                                {/* Members Section - Using Shared Component */}
                                 <Grid item xs={12}>
-                                    <FormControl sx={{ width: '100%' }}>
-                                        <InputLabel id="group-members-label">Group Members</InputLabel>
-                                        <Select
-                                            labelId="group-members-label"
-                                            id="group-members"
-                                            multiple
-                                            {...getFieldProps('groupMembers')}
-                                            input={<OutlinedInput id="group-members" label="Group Members" />}
-                                            renderValue={(selected) => (
-                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                                    {selected.map((value) => (
-                                                        <Chip key={value} label={value} />
-                                                    ))}
-                                                </Box>
-                                            )}
-                                            MenuProps={MenuProps}
-                                        >
-                                            {emailList.map((email) => (
-                                                <MenuItem
-                                                    key={email}
-                                                    value={email}
-                                                >
-                                                    {email}
-                                                </MenuItem>
-                                            ))}
-                                        </Select>
-                                    </FormControl>
+                                    <MemberSearchInput
+                                        members={values.groupMembers}
+                                        onAddMember={handleAddMember}
+                                        onRemoveMember={handleRemoveMember}
+                                        currentUser={currentUser}
+                                        groupName={values.groupName}
+                                        onAlert={handleAlert}
+                                    />
                                 </Grid>
 
                                 <Grid item xs={6} >

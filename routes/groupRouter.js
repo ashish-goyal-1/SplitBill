@@ -29,10 +29,20 @@ router.post('/v1/makeSettlement', controller.makeSettlement)
 //Debt Consolidation - Cross-group balance aggregation
 router.post('/v1/consolidate', controller.consolidateUserDebts)
 
-//Delte group router
+//Delete group router
 router.delete('/v1/delete', controller.deleteGroup)
 
 //Send payment reminder (nudge) router
 router.post('/v1/nudge', controller.sendNudgeReminder)
 
+// Pending Invite System
+router.post('/v1/pendingInvites', controller.getPendingInvites)
+router.post('/v1/acceptInvite', controller.acceptInvite)
+router.post('/v1/declineInvite', controller.declineInvite)
+
+// Activity Feed
+router.post('/v1/activity', controller.getGroupActivity)
+
 module.exports = router;
+
+

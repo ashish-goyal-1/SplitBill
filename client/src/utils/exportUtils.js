@@ -135,11 +135,22 @@ export function exportToPDF(data) {
                     border-top: 1px solid #eee;
                     padding-top: 20px;
                 }
+                /* Hide browser's default print headers and footers (removes "about:blank") */
+                @page {
+                    margin: 15mm;
+                    /* Remove browser headers/footers */
+                }
                 @media print {
                     body { padding: 20px; }
                     .no-print { display: none; }
+                    /* Additional print cleanup */
+                    @page {
+                        margin-top: 10mm;
+                        margin-bottom: 10mm;
+                    }
                 }
             </style>
+
         </head>
         <body>
             <div class="header">
@@ -217,16 +228,25 @@ export function exportToPDF(data) {
         </html>
     `;
 
-    // Open print window
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(printContent);
-    printWindow.document.close();
+    // Open print window using a data URL to avoid "about:blank" appearing in print
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+    if (printWindow) {
+        printWindow.document.write(printContent);
+        printWindow.document.close();
 
-    // Wait for content to load, then trigger print
-    printWindow.onload = function () {
-        printWindow.print();
-    };
+        // Set document title for proper print header
+        printWindow.document.title = `${groupName} - Expense Report`;
+
+        // Wait for content to load, then trigger print
+        setTimeout(() => {
+            printWindow.focus();
+            printWindow.print();
+        }, 250);
+    } else {
+        alert('Please allow popups to generate the PDF report');
+    }
 }
+
 
 /**
  * Export group data to CSV format

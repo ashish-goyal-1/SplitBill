@@ -7,7 +7,8 @@ import { Box, Divider, Typography, Stack, MenuItem, Avatar, IconButton } from '@
 import gravatarUrl from 'gravatar-url';
 // components
 import MenuPopover from '../../components/MenuPopover';
-
+// auth
+import { useAuth } from '../../contexts/AuthContext';
 import { logout } from '../../services/auth';
 
 import configData from '../../config.json'
@@ -29,8 +30,8 @@ const MENU_OPTIONS = [
 // ----------------------------------------------------------------------
 
 export default function AccountPopover() {
-
-  const user = JSON.parse(localStorage.getItem('profile'))
+  // Use centralized auth context instead of localStorage
+  const { user } = useAuth();
 
 
   const anchorRef = useRef(null);

@@ -226,9 +226,210 @@ const sendSettlementConfirmation = async (fromEmail, toEmail, amount, groupName,
     ]);
 };
 
+/**
+ * Send group invitation to non-registered user
+ * @param {string} toEmail - Email to invite
+ * @param {string} inviterName - Name of person inviting
+ * @param {string} groupName - Name of the group
+ */
+const sendGroupInvite = async (toEmail, inviterName, groupName) => {
+    const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+        </head>
+        <body style="font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f5; padding: 20px;">
+            <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
+                    <h1 style="color: white; margin: 0; font-size: 24px;">🎉 You're Invited!</h1>
+                </div>
+                <div style="padding: 30px; text-align: center;">
+                    <div style="font-size: 48px; margin-bottom: 20px;">📬</div>
+                    <p style="font-size: 18px; color: #333;">
+                        <strong>${inviterName}</strong> has invited you to join
+                    </p>
+                    <p style="font-size: 24px; font-weight: bold; color: #667eea; margin: 20px 0;">
+                        "${groupName || 'a group'}"
+                    </p>
+                    <p style="color: #666; margin: 20px 0;">
+                        on <strong>SplitBill</strong> - the smart way to share expenses with friends, family, and roommates.
+                    </p>
+                    
+                    <div style="margin: 30px 0;">
+                        <a href="${process.env.APP_URL || 'http://localhost:3000'}/register" 
+                           style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 25px; font-weight: bold; font-size: 16px;">
+                            Join SplitBill
+                        </a>
+                    </div>
+
+                    <p style="color: #888; font-size: 14px;">
+                        Create your free account to start splitting expenses!
+                    </p>
+                </div>
+                <div style="background: #f8f9fa; padding: 20px; text-align: center; color: #888; font-size: 12px;">
+                    Sent by SplitBill • <a href="#" style="color: #667eea;">Unsubscribe</a>
+                </div>
+            </div>
+        </body>
+        </html>
+    `;
+
+    return sendEmail(toEmail, `🎉 ${inviterName} invited you to join "${groupName || 'a group'}" on SplitBill!`, html);
+};
+
+/**
+ * Send pending invite email to registered user
+ * Different from sendGroupInvite - this is for registered users who need to accept
+ * @param {string} toEmail - Registered user's email
+ * @param {string} inviterName - Name of person inviting
+ * @param {string} groupName - Name of the group
+ */
+const sendPendingInviteEmail = async (toEmail, inviterName, groupName) => {
+    const appUrl = process.env.APP_URL || 'http://localhost:3000';
+
+    const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+        </head>
+        <body style="font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f5; padding: 20px;">
+            <div style="max-width: 500px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
+                    <h1 style="color: white; margin: 0; font-size: 24px;">📩 Group Invitation</h1>
+                </div>
+                <div style="padding: 30px; text-align: center;">
+                    <p style="color: #333; font-size: 18px; margin-bottom: 10px;">
+                        <strong>${inviterName}</strong> wants you to join
+                    </p>
+                    <h2 style="color: #667eea; margin: 0 0 20px 0; font-size: 28px;">
+                        "${groupName}"
+                    </h2>
+                    <p style="color: #666; font-size: 14px; margin-bottom: 30px;">
+                        Log in to your dashboard to accept or decline this invitation.
+                    </p>
+                    <a href="${appUrl}/dashboard" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; padding: 15px 40px; border-radius: 25px; font-weight: bold; font-size: 16px;">
+                        View Invitation
+                    </a>
+                </div>
+                <div style="background: #f8f9fa; padding: 20px; text-align: center; color: #888; font-size: 12px;">
+                    Sent by SplitBill
+                </div>
+            </div>
+        </body>
+        </html>
+    `;
+
+    return sendEmail(toEmail, `📩 ${inviterName} invited you to join "${groupName}" - Action Required`, html);
+};
+
+/**
+ * Send email verification link to new user
+ * @param {string} toEmail - User's email
+ * @param {string} token - Verification token
+ * @param {string} firstName - User's first name (optional)
+ */
+const sendVerificationEmail = async (toEmail, token, firstName = '') => {
+    const appUrl = process.env.APP_URL || 'http://localhost:3000';
+    const verifyUrl = `${appUrl}/verify/${token}`;
+
+    const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+        </head>
+        <body style="font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f5; padding: 20px;">
+            <div style="max-width: 500px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
+                    <h1 style="color: white; margin: 0; font-size: 24px;">✉️ Verify Your Email</h1>
+                </div>
+                <div style="padding: 30px; text-align: center;">
+                    <p style="color: #333; font-size: 18px; margin-bottom: 10px;">
+                        Hi${firstName ? ` ${firstName}` : ''},
+                    </p>
+                    <p style="color: #666; font-size: 16px; margin-bottom: 30px;">
+                        Thanks for signing up for SplitBill! Please verify your email address to get started.
+                    </p>
+                    <a href="${verifyUrl}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; padding: 15px 40px; border-radius: 25px; font-weight: bold; font-size: 16px;">
+                        Verify Email
+                    </a>
+                    <p style="color: #888; font-size: 14px; margin-top: 30px;">
+                        This link expires in 24 hours.
+                    </p>
+                    <p style="color: #999; font-size: 12px; margin-top: 20px;">
+                        If you didn't create an account, you can safely ignore this email.
+                    </p>
+                </div>
+                <div style="background: #f8f9fa; padding: 20px; text-align: center; color: #888; font-size: 12px;">
+                    Sent by SplitBill
+                </div>
+            </div>
+        </body>
+        </html>
+    `;
+
+    return sendEmail(toEmail, '✉️ Verify your SplitBill account', html);
+};
+
+/**
+ * Send password reset link to user
+ * @param {string} toEmail - User's email
+ * @param {string} token - Reset token
+ * @param {string} firstName - User's first name (optional)
+ */
+const sendPasswordResetEmail = async (toEmail, token, firstName = '') => {
+    const appUrl = process.env.APP_URL || 'http://localhost:3000';
+    const resetUrl = `${appUrl}/reset-password/${token}`;
+
+    const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+        </head>
+        <body style="font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f5; padding: 20px;">
+            <div style="max-width: 500px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
+                    <h1 style="color: white; margin: 0; font-size: 24px;">🔐 Reset Your Password</h1>
+                </div>
+                <div style="padding: 30px; text-align: center;">
+                    <p style="color: #333; font-size: 18px; margin-bottom: 10px;">
+                        Hi${firstName ? ` ${firstName}` : ''},
+                    </p>
+                    <p style="color: #666; font-size: 16px; margin-bottom: 30px;">
+                        We received a request to reset your password. Click the button below to create a new password.
+                    </p>
+                    <a href="${resetUrl}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; padding: 15px 40px; border-radius: 25px; font-weight: bold; font-size: 16px;">
+                        Reset Password
+                    </a>
+                    <p style="color: #888; font-size: 14px; margin-top: 30px;">
+                        This link expires in 1 hour.
+                    </p>
+                    <p style="color: #999; font-size: 12px; margin-top: 20px;">
+                        If you didn't request a password reset, you can safely ignore this email.
+                    </p>
+                </div>
+                <div style="background: #f8f9fa; padding: 20px; text-align: center; color: #888; font-size: 12px;">
+                    Sent by SplitBill
+                </div>
+            </div>
+        </body>
+        </html>
+    `;
+
+    return sendEmail(toEmail, '🔐 Reset your SplitBill password', html);
+};
+
 module.exports = {
     sendEmail,
     sendPaymentReminder,
     sendExpenseNotification,
-    sendSettlementConfirmation
+    sendSettlementConfirmation,
+    sendGroupInvite,
+    sendPendingInviteEmail,
+    sendVerificationEmail,
+    sendPasswordResetEmail
 };
+

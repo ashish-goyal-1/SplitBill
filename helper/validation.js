@@ -12,10 +12,13 @@ exports.notNull = (value) => {
 }
 
 exports.emailValidation = (email) => {
-    if (email && email.includes("@") && email.includes(".com"))
+    // Proper email regex - accepts any valid domain (.com, .edu, .ac.in, .co.uk, etc.)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (email && emailRegex.test(email))
         return true
     else {
-        var err = new Error("Email validation fail!!")
+        var err = new Error("Please enter a valid email address")
         err.status = 400
         throw err
     }

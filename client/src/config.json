@@ -3,6 +3,9 @@
   "DASHBOARD_HOME_URL": "/dashboard",
   "LOGIN_URL": "/",
   "REGISTER_URL": "/register",
+  "VERIFY_EMAIL_URL": "/verify/:token",
+  "FORGOT_PASSWORD_URL": "/forgot-password",
+  "RESET_PASSWORD_URL": "/reset-password/:token",
   "USER_GROUPS_URL": "/dashboard/groups",
   "VIEW_GROUP_ROUTER_URL": "/dashboard/groups/view/:groupId",
   "VIEW_GROUP_URL": "/dashboard/groups/view/",
@@ -20,5 +23,8 @@
   "USER_DELETED_URL": "/userProfile/confirmDelete",
   "USER_PASS_UPDATE_URL": "/dashboard/userProfile/updatePassword",
   "GROUP_NUDGE": "/api/group/v1/nudge",
+  "GROUP_PENDING_INVITES": "/api/group/v1/pendingInvites",
+  "GROUP_ACCEPT_INVITE": "/api/group/v1/acceptInvite",
+  "GROUP_DECLINE_INVITE": "/api/group/v1/declineInvite",
   "USER_DEFAULT_LOGO_URL": "https://res.cloudinary.com/tuzup/image/upload/v1658929366/SplitApp/user_l7xmft.png"
 }

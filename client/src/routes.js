@@ -25,6 +25,11 @@ const EditExpense = lazy(() => import('./components/expense/editExpense'));
 const EditGroup = lazy(() => import('./components/groups/editGroup').then(module => ({ default: module.EditGroup })));
 const About = lazy(() => import('./components/about'));
 
+// Auth pages
+const VerifyEmail = lazy(() => import('./components/auth/VerifyEmail'));
+const ForgotPassword = lazy(() => import('./components/auth/ForgotPassword'));
+const ResetPassword = lazy(() => import('./components/auth/ResetPassword'));
+
 // Loading fallback component
 const LoadingScreen = () => (
   <Box
@@ -73,6 +78,10 @@ export default function Router() {
         { path: configData.ABOUT_URL, element: <Suspense fallback={<LoadingScreen />}><About /></Suspense> }
       ]
     },
+    // Auth routes (outside layouts for full-page experience)
+    { path: '/verify/:token', element: <Suspense fallback={<LoadingScreen />}><VerifyEmail /></Suspense> },
+    { path: '/forgot-password', element: <Suspense fallback={<LoadingScreen />}><ForgotPassword /></Suspense> },
+    { path: '/reset-password/:token', element: <Suspense fallback={<LoadingScreen />}><ResetPassword /></Suspense> },
     { path: '*', element: <Suspense fallback={<LoadingScreen />}><Page404 /></Suspense> }
   ])
 }

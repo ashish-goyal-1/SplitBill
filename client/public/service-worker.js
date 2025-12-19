@@ -8,9 +8,9 @@
  * - Background sync for pending operations
  */
 
-const CACHE_NAME = 'splitbill-v1';
-const STATIC_CACHE = 'splitbill-static-v1';
-const DYNAMIC_CACHE = 'splitbill-dynamic-v1';
+const CACHE_NAME = 'splitbill-v2';
+const STATIC_CACHE = 'splitbill-static-v2';
+const DYNAMIC_CACHE = 'splitbill-dynamic-v2';
 
 // Static assets to cache immediately
 const STATIC_ASSETS = [

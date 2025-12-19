@@ -1,5 +1,5 @@
-import { Box, Button, Container, Divider, Fab, Grid, Link, Stack, styled, Typography } from '@mui/material';
-import React, { useEffect, useState } from 'react'
+import { Avatar, Box, Button, Chip, Container, Divider, Fab, FormControl, Grid, IconButton, InputAdornment, InputLabel, Link, MenuItem, Select, Snackbar, Stack, styled, TextField, Tooltip, Typography } from '@mui/material';
+import React, { useEffect, useState, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { getGroupDetailsService, getGroupExpenseService } from '../../../services/groupServices';
 import AlertBanner from '../../AlertBanner';
@@ -10,11 +10,13 @@ import { convertToCurrency, currencyFind, categoryIcon } from '../../../utils/he
 import ExpenseCard from '../../expense/expenseCard';
 import GroupCategoryGraph from './groupCategoryGraph';
 import GroupMonthlyGraph from './groupMonthlyGraph';
+import TopSpenders from './TopSpenders';
 import { Link as RouterLink } from 'react-router-dom';
 import dataConfig from '../../../config.json';
 import { GroupSettlements } from '../settlement';
 import MyBalance from '../settlement/MyBalance';
 import { exportToPDF, exportToCSV } from '../../../utils/exportUtils';
+import ActivityFeed from './ActivityFeed';
 
 const profile = JSON.parse(localStorage.getItem('profile'))
 const emailId = profile?.emailId
@@ -32,6 +34,27 @@ export default function ViewGroup() {
     const [expFocus, setExpFocus] = useState(false);
     const [expenses, setExpenses] = useState()
     const [viewSettlement, setViewSettlement] = useState(0)
+
+    // Search and Filter state
+    const [searchTerm, setSearchTerm] = useState('');
+    const [categoryFilter, setCategoryFilter] = useState('all');
+    const [payerFilter, setPayerFilter] = useState('all');
+
+    // Snackbar for share feedback
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
+
+    // Share group link handler
+    const handleShareGroup = async () => {
+        try {
+            await navigator.clipboard.writeText(window.location.href);
+            setSnackbarMessage('Group link copied to clipboard!');
+            setSnackbarOpen(true);
+        } catch (err) {
+            setSnackbarMessage('Failed to copy link');
+            setSnackbarOpen(true);
+        }
+    };
 
 
     const toggleAllExp = () => {
@@ -54,6 +77,25 @@ export default function ViewGroup() {
     const toggleMySettleView = () => {
         setViewSettlement(2)
     }
+
+    const toggleActivityView = () => {
+        setViewSettlement(3)
+    }
+
+    // Filtered expenses based on search and filters
+    const filteredExpenses = useMemo(() => {
+        if (!expenses) return [];
+        return expenses.filter(exp => {
+            const matchesSearch = searchTerm === '' ||
+                exp.expenseName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                exp.expenseDescription?.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesCategory = categoryFilter === 'all' ||
+                exp.expenseCategory === categoryFilter;
+            const matchesPayer = payerFilter === 'all' ||
+                exp.expenseOwner === payerFilter;
+            return matchesSearch && matchesCategory && matchesPayer;
+        });
+    }, [expenses, searchTerm, categoryFilter, payerFilter]);
 
     // Handle PDF export
     const handleExportPDF = () => {
@@ -134,6 +176,15 @@ export default function ViewGroup() {
                         <AlertBanner showAlert={alert} alertMessage={alertMessage} severity='error' />
 
                         <Stack direction="row" spacing={1} sx={{ float: 'right' }}>
+                            <Tooltip title="Copy invite link" arrow>
+                                <IconButton
+                                    onClick={handleShareGroup}
+                                    size="small"
+                                    sx={{ color: 'primary.main' }}
+                                >
+                                    <Iconify icon="mdi:share-variant" sx={{ fontSize: 20 }} />
+                                </IconButton>
+                            </Tooltip>
                             <Iconify
                                 icon="mdi:file-pdf-box"
                                 onClick={handleExportPDF}
@@ -175,8 +226,43 @@ export default function ViewGroup() {
                                 Category : &nbsp;
                                 {group?.groupCategory}
                             </Typography>
+                        </Stack>
 
+                        {/* Members Section */}
+                        <Box sx={{ mt: 2, mb: 1 }}>
+                            <Typography variant="subtitle2" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <Iconify icon="mdi:account-group" sx={{ fontSize: 18 }} />
+                                Members ({(group?.groupMembers?.length || 0) + (group?.pendingMembers?.length || 0)})
+                            </Typography>
+                            <Stack direction="row" flexWrap="wrap" gap={1}>
+                                {group?.groupMembers?.map(member => (
+                                    <Tooltip key={member} title={member} arrow>
+                                        <Chip
+                                            avatar={<Avatar sx={{ bgcolor: 'primary.main' }}>{member[0].toUpperCase()}</Avatar>}
+                                            label={member.split('@')[0]}
+                                            variant="outlined"
+                                            color="primary"
+                                            size="small"
+                                        />
+                                    </Tooltip>
+                                ))}
+                                {group?.pendingMembers?.map(member => (
+                                    <Tooltip key={member} title={`${member} (Pending invite)`} arrow>
+                                        <Chip
+                                            avatar={<Avatar sx={{ bgcolor: 'warning.main' }}>{member[0].toUpperCase()}</Avatar>}
+                                            label={`${member.split('@')[0]} ⏳`}
+                                            variant="outlined"
+                                            color="warning"
+                                            size="small"
+                                        />
+                                    </Tooltip>
+                                ))}
+                            </Stack>
+                        </Box>
+
+                        <Stack direction="row" justifyContent="flex-end" mt={1}>
                             <Fab component={RouterLink}
+
                                 to={dataConfig.ADD_EXPENSE_URL + group?._id}
                                 color="primary" aria-label="add"
                                 variant="extended"
@@ -381,6 +467,25 @@ export default function ViewGroup() {
                             }}>
                                 My Balance
                             </Typography>
+
+                            <Typography variant="subtitle" onClick={toggleActivityView} noWrap sx={{
+                                cursor: 'pointer', fontSize: 18,
+                                width: '100%',
+                                textAlign: 'center',
+                                ...(viewSettlement === 3 && {
+                                    fontWeight: 800,
+                                    borderRadius: 1,
+                                    px: 1,
+                                    color: (theme) => theme.palette['info'].dark,
+                                    bgcolor: (theme) => theme.palette['primary'].lighter,
+                                    py: '5px',
+                                }),
+                                ...(!mdUp && {
+                                    fontSize: 11
+                                })
+                            }}>
+                                Activity
+                            </Typography>
                         </Stack>
                         <Grid container mt={2} rowSpacing={2} columnSpacing={{ xs: 1, md: 2 }}
                             justifyContent={'center'}
@@ -395,6 +500,29 @@ export default function ViewGroup() {
                             {viewSettlement === 1 &&
                                 <Grid item md={12} xs={12}>
                                     <GroupSettlements currencyType={group?.groupCurrency} />
+                                    {/* Analytics Section - Moved from Expenses Tab */}
+                                    <Box sx={{ mt: 4 }}>
+                                        <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Iconify icon="mdi:chart-line" sx={{ fontSize: 24 }} />
+                                            Spending Analysis
+                                        </Typography>
+                                        <Grid container spacing={2}>
+                                            <Grid item xs={12} md={6}>
+                                                <GroupCategoryGraph currencyType={group?.groupCurrency} />
+                                            </Grid>
+                                            <Grid item xs={12} md={6}>
+                                                <TopSpenders currencyType={group?.groupCurrency} />
+                                            </Grid>
+                                            <Grid item xs={12}>
+                                                <GroupMonthlyGraph />
+                                            </Grid>
+                                        </Grid>
+                                    </Box>
+                                </Grid>
+                            }
+                            {viewSettlement === 3 &&
+                                <Grid item xs={12}>
+                                    <ActivityFeed groupId={params.groupId} />
                                 </Grid>
                             }
                             {viewSettlement === 0 &&
@@ -419,32 +547,128 @@ export default function ViewGroup() {
                                             </Typography>
                                         </Grid>
                                         : <>
+                                            {/* Summary Ribbon - Sticky on desktop, scrollable on mobile */}
+                                            <Grid item xs={12}>
+                                                <Box sx={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-around',
+                                                    alignItems: 'center',
+                                                    bgcolor: 'background.paper',
+                                                    borderRadius: 2,
+                                                    p: 2,
+                                                    mb: 2,
+                                                    boxShadow: 1,
+                                                    position: { md: 'sticky' },
+                                                    top: { md: 0 },
+                                                    zIndex: { md: 10 }
+                                                }}>
+                                                    <Box sx={{ textAlign: 'center' }}>
+                                                        <Typography variant="caption" color="text.secondary">
+                                                            Total Group Spend
+                                                        </Typography>
+                                                        <Typography variant="h6" color="primary.main">
+                                                            {currencyFind(group?.groupCurrency)} {groupExpense?.total ? convertToCurrency(groupExpense.total) : 0}
+                                                        </Typography>
+                                                    </Box>
+                                                    <Divider orientation="vertical" flexItem />
+                                                    <Box sx={{ textAlign: 'center' }}>
+                                                        <Typography variant="caption" color="text.secondary">
+                                                            Your Total Share
+                                                        </Typography>
+                                                        <Typography
+                                                            variant="h6"
+                                                            color={findUserSplit(group?.split) >= 0 ? 'success.main' : 'error.main'}
+                                                        >
+                                                            {currencyFind(group?.groupCurrency)} {Math.abs(findUserSplit(group?.split) || 0).toLocaleString()}
+                                                        </Typography>
+                                                    </Box>
+                                                </Box>
+                                            </Grid>
+
+                                            {/* Search and Filter UI */}
+                                            <Grid item xs={12}>
+                                                <Stack
+                                                    direction={{ xs: 'column', md: 'row' }}
+                                                    spacing={2}
+                                                    sx={{ mb: 2 }}
+                                                >
+                                                    <TextField
+                                                        size="small"
+                                                        placeholder="Search expenses..."
+                                                        value={searchTerm}
+                                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                                        InputProps={{
+                                                            startAdornment: (
+                                                                <InputAdornment position="start">
+                                                                    <Iconify icon="mdi:magnify" sx={{ color: 'text.disabled' }} />
+                                                                </InputAdornment>
+                                                            ),
+                                                        }}
+                                                        sx={{ flex: 1, minWidth: 200 }}
+                                                    />
+                                                    <FormControl size="small" sx={{ minWidth: 140 }}>
+                                                        <InputLabel>Category</InputLabel>
+                                                        <Select
+                                                            value={categoryFilter}
+                                                            label="Category"
+                                                            onChange={(e) => setCategoryFilter(e.target.value)}
+                                                        >
+                                                            <MenuItem value="all">All Categories</MenuItem>
+                                                            <MenuItem value="Food & drink">Food & drink</MenuItem>
+                                                            <MenuItem value="Entertainment">Entertainment</MenuItem>
+                                                            <MenuItem value="Transportation">Transportation</MenuItem>
+                                                            <MenuItem value="Healthcare">Healthcare</MenuItem>
+                                                            <MenuItem value="Utilities">Utilities</MenuItem>
+                                                            <MenuItem value="Others">Others</MenuItem>
+                                                        </Select>
+                                                    </FormControl>
+                                                    <FormControl size="small" sx={{ minWidth: 140 }}>
+                                                        <InputLabel>Paid By</InputLabel>
+                                                        <Select
+                                                            value={payerFilter}
+                                                            label="Paid By"
+                                                            onChange={(e) => setPayerFilter(e.target.value)}
+                                                        >
+                                                            <MenuItem value="all">All Payers</MenuItem>
+                                                            {group?.groupMembers?.map(member => (
+                                                                <MenuItem key={member} value={member}>
+                                                                    {member.split('@')[0]}
+                                                                </MenuItem>
+                                                            ))}
+                                                        </Select>
+                                                    </FormControl>
+                                                </Stack>
+                                            </Grid>
+
                                             <Grid item xs={12} md={expFocus ? 12 : 6}>
                                                 <Grid container spacing={2}>
 
-                                                    {expenses?.map(myExpense => (
-                                                        <Grid item xs={12} md={expFocus ? 6 : 12} key={myExpense?._id}>
-                                                            <ExpenseCard
-                                                                expenseId={myExpense?._id}
-                                                                expenseName={myExpense?.expenseName}
-                                                                expenseAmount={myExpense?.expenseAmount}
-                                                                expensePerMember={myExpense?.expensePerMember}
-                                                                expenseOwner={myExpense?.expenseOwner}
-                                                                expenseDate={myExpense?.expenseDate}
-                                                                currencyType={group?.groupCurrency}
-                                                            />
-                                                        </Grid>))}
+                                                    {filteredExpenses?.length === 0 && (searchTerm || categoryFilter !== 'all' || payerFilter !== 'all') ? (
+                                                        <Grid item xs={12}>
+                                                            <Typography variant="body2" color="text.secondary" textAlign="center" py={4}>
+                                                                No expenses match your filters.
+                                                            </Typography>
+                                                        </Grid>
+                                                    ) : (
+                                                        filteredExpenses?.map(myExpense => (
+                                                            <Grid item xs={12} md={expFocus ? 6 : 12} key={myExpense?._id}>
+                                                                <ExpenseCard
+                                                                    expenseId={myExpense?._id}
+                                                                    expenseName={myExpense?.expenseName}
+                                                                    expenseAmount={myExpense?.expenseAmount}
+                                                                    expensePerMember={myExpense?.expensePerMember}
+                                                                    expenseOwner={myExpense?.expenseOwner}
+                                                                    expenseDate={myExpense?.expenseDate}
+                                                                    currencyType={group?.groupCurrency}
+                                                                    splitType={myExpense?.splitType}
+                                                                />
+                                                            </Grid>))
+                                                    )}
 
                                                     {!showAllExp && <Grid item xs={12}>
                                                         <Button onClick={toggleAllExp}>View More</Button>
                                                     </Grid>}
                                                 </Grid>
-                                            </Grid>
-                                            <Grid item xs={12} md={6} >
-                                                <GroupCategoryGraph currencyType={group?.groupCurrency} />
-                                            </Grid>
-                                            <Grid item xs={12} md={expFocus || viewSettlement ? 6 : 12}>
-                                                <GroupMonthlyGraph />
                                             </Grid>
                                         </>
                                     }
@@ -452,6 +676,15 @@ export default function ViewGroup() {
                             }
 
                         </Grid>
+
+                        {/* Snackbar for share feedback */}
+                        <Snackbar
+                            open={snackbarOpen}
+                            autoHideDuration={3000}
+                            onClose={() => setSnackbarOpen(false)}
+                            message={snackbarMessage}
+                            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                        />
                     </Box>
 
                 </>}

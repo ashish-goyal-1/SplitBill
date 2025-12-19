@@ -1,15 +1,18 @@
 import { LoadingButton } from '@mui/lab';
-import { Box, Button, Chip, Container, FormControl, FormHelperText, Grid, InputLabel, MenuItem, OutlinedInput, Select, TextField, Typography } from '@mui/material'
+import {
+    Button, Container, FormControl, FormHelperText, Grid, InputLabel,
+    MenuItem, Select, TextField, Typography
+} from '@mui/material'
 import { Form, FormikProvider, useFormik } from 'formik';
 import { useEffect, useState } from 'react';
 import * as Yup from 'yup';
-import { getEmailList } from '../../services/auth';
 import Loading from '../loading';
 import useResponsive from '../../theme/hooks/useResponsive';
 import { editGroupService, getGroupDetailsService } from '../../services/groupServices';
 import AlertBanner from '../AlertBanner';
 import configData from '../../config.json'
 import { useNavigate, useParams } from 'react-router-dom';
+import MemberSearchInput from './MemberSearchInput';
 
 
 export const EditGroup = () => {
@@ -19,12 +22,11 @@ export const EditGroup = () => {
     const profile = JSON.parse(localStorage.getItem('profile'))
     const currentUser = profile?.emailId
     const [loading, setLoading] = useState(false);
-    const [emailList, setEmailList] = useState([]);
     const [alert, setAlert] = useState(false);
     const [alertMessage, setAlertMessage] = useState('');
+    const [alertSeverity, setAlertSeverity] = useState('error');
 
-
-    //Formink schema 
+    //Formik schema 
     const groupSchema = Yup.object().shape({
         groupName: Yup.string().required('Group name is required'),
         groupDescription: Yup.string(),
@@ -51,45 +53,48 @@ export const EditGroup = () => {
 
     const { errors, touched, values, isSubmitting, handleSubmit, getFieldProps } = formik;
 
-    const ITEM_HEIGHT = 48;
-    const ITEM_PADDING_TOP = 8;
-    const MenuProps = {
-        PaperProps: {
-            style: {
-                maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
-                width: 250,
-            },
-        },
-    };
-
-
-
-
+    // Fetch group details on mount
     useEffect(() => {
-        const getEmails = async () => {
+        const fetchGroupData = async () => {
             setLoading(true)
-            const response = await getEmailList()
-            var list = response.data.user
-            list.indexOf(currentUser) > -1 && list.splice(list.indexOf(currentUser), 1)
-            setEmailList(list)
-            const groupIdJson = {
-                id: params.groupId
-            }
-            const response_group = await getGroupDetailsService(groupIdJson, setAlert, setAlertMessage)
-            const groupDetails = response_group?.data?.group
-            formik.values.groupName = groupDetails?.groupName
-            formik.values.groupDescription = groupDetails?.groupDescription
-            formik.values.groupMembers = groupDetails?.groupMembers
-            formik.values.groupOwner = groupDetails?.groupOwner
-            formik.values.groupCurrency = groupDetails?.groupCurrency
-            formik.values.groupCategory = groupDetails?.groupCategory
+            try {
+                const groupIdJson = { id: params.groupId }
+                const response_group = await getGroupDetailsService(groupIdJson, setAlert, setAlertMessage)
+                const groupDetails = response_group?.data?.group
 
+                formik.setFieldValue('groupName', groupDetails?.groupName || '')
+                formik.setFieldValue('groupDescription', groupDetails?.groupDescription || '')
+                formik.setFieldValue('groupMembers', groupDetails?.groupMembers || [currentUser])
+                formik.setFieldValue('groupOwner', groupDetails?.groupOwner || '')
+                formik.setFieldValue('groupCurrency', groupDetails?.groupCurrency || '')
+                formik.setFieldValue('groupCategory', groupDetails?.groupCategory || '')
+            } catch (error) {
+                console.error('Error fetching group:', error)
+            }
             setLoading(false)
         }
-        getEmails()
 
+        if (currentUser) {
+            fetchGroupData()
+        }
+    }, [params.groupId, currentUser]);
 
-    }, []);
+    // Handle alert from MemberSearchInput
+    const handleAlert = (message, severity) => {
+        setAlert(true);
+        setAlertMessage(message);
+        setAlertSeverity(severity);
+    };
+
+    // Handle member add
+    const handleAddMember = (email) => {
+        formik.setFieldValue('groupMembers', [...values.groupMembers, email]);
+    };
+
+    // Handle member remove
+    const handleRemoveMember = (email) => {
+        formik.setFieldValue('groupMembers', values.groupMembers.filter(m => m !== email));
+    };
 
     return (
         <Container>
@@ -98,7 +103,7 @@ export const EditGroup = () => {
                     <Typography variant="h4" pb={2} mb={3}>
                         Edit Group
                     </Typography>
-                    <AlertBanner showAlert={alert} alertMessage={alertMessage} severity='error' />
+                    <AlertBanner showAlert={alert} alertMessage={alertMessage} severity={alertSeverity} />
                     <FormikProvider value={formik}>
                         <Form autoComplete="off" noValidate onSubmit={handleSubmit}>
                             <Grid container spacing={3} sx={{ maxWidth: 800 }}>
@@ -128,34 +133,17 @@ export const EditGroup = () => {
                                         helperText={touched.groupDescription && errors.groupDescription}
                                     />
                                 </Grid>
+
+                                {/* Members Section - Using Shared Component */}
                                 <Grid item xs={12}>
-                                    <FormControl sx={{ width: '100%' }}>
-                                        <InputLabel id="group-members-label">Group Members</InputLabel>
-                                        <Select
-                                            labelId="group-members-label"
-                                            id="group-members"
-                                            multiple
-                                            {...getFieldProps('groupMembers')}
-                                            input={<OutlinedInput id="group-members" label="Group Members" />}
-                                            renderValue={(selected) => (
-                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                                    {selected.map((value) => (
-                                                        <Chip key={value} label={value} />
-                                                    ))}
-                                                </Box>
-                                            )}
-                                            MenuProps={MenuProps}
-                                        >
-                                            {emailList.map((email) => (
-                                                <MenuItem
-                                                    key={email}
-                                                    value={email}
-                                                >
-                                                    {email}
-                                                </MenuItem>
-                                            ))}
-                                        </Select>
-                                    </FormControl>
+                                    <MemberSearchInput
+                                        members={values.groupMembers}
+                                        onAddMember={handleAddMember}
+                                        onRemoveMember={handleRemoveMember}
+                                        currentUser={currentUser}
+                                        groupName={values.groupName}
+                                        onAlert={handleAlert}
+                                    />
                                 </Grid>
 
                                 <Grid item xs={6} >

@@ -57,6 +57,28 @@ const User = new mongoose.Schema({
     defaultCurrency: {
         type: String,
         default: 'INR'
+    },
+    // Email verification
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
+    verificationToken: {
+        type: String,
+        default: null
+    },
+    verificationTokenExpires: {
+        type: Date,
+        default: null
+    },
+    // Password reset
+    resetToken: {
+        type: String,
+        default: null
+    },
+    resetTokenExpires: {
+        type: Date,
+        default: null
     }
 })
 
@@ -79,6 +101,11 @@ const Group = new mongoose.Schema({
     groupMembers: {
         type: Array,
         required: true
+    },
+    // Pending members waiting to accept invitation
+    pendingMembers: {
+        type: Array,
+        default: []
     },
     groupCategory: {
         type: String,
@@ -130,12 +157,33 @@ const Expense = new mongoose.Schema({
     },
     expensePerMember: {
         type: Number,
-        required: true
+        required: false  // Not required for exact/percentage splits
     },
     expenseType: {
         type: String,
         default: "Cash"
     },
+    // Split type configuration
+    splitType: {
+        type: String,
+        enum: ['equal', 'exact', 'percentage'],
+        default: 'equal'
+    },
+    // Per-member split details (for exact/percentage splits)
+    splitDetails: [{
+        email: {
+            type: String,
+            required: true
+        },
+        amount: {
+            type: Number,    // Calculated amount owed
+            required: true
+        },
+        percentage: {
+            type: Number,    // Only for percentage split (0-100)
+            default: null
+        }
+    }],
     // Recurring expense fields
     isRecurring: {
         type: Boolean,
@@ -197,7 +245,7 @@ const Notification = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['expense_added', 'expense_edited', 'expense_deleted', 'settlement', 'nudge', 'member_added', 'member_removed'],
+        enum: ['expense_added', 'expense_edited', 'expense_deleted', 'settlement', 'nudge', 'member_added', 'member_removed', 'group_invite', 'invite_accepted', 'invite_declined'],
         required: true
     },
     title: {
@@ -227,8 +275,45 @@ const Notification = new mongoose.Schema({
     }
 })
 
+// Activity Log for audit trail
+const ActivityLog = new mongoose.Schema({
+    groupId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'group',
+        required: true,
+        index: true
+    },
+    action: {
+        type: String,
+        required: true,
+        enum: [
+            'EXPENSE_ADDED', 'EXPENSE_UPDATED', 'EXPENSE_DELETED',
+            'SETTLEMENT_MADE', 'MEMBER_JOINED', 'MEMBER_LEFT',
+            'GROUP_CREATED', 'GROUP_UPDATED', 'INVITE_SENT', 'INVITE_ACCEPTED'
+        ]
+    },
+    description: {
+        type: String,
+        required: true
+    },
+    performedBy: {
+        type: String,
+        required: true
+    },
+    metadata: {
+        type: Object,
+        default: {}
+    },
+    timestamp: {
+        type: Date,
+        default: Date.now,
+        index: true
+    }
+})
+
 module.exports.Expense = mongoose.model('expense', Expense)
 module.exports.User = mongoose.model('user', User)
 module.exports.Group = mongoose.model('group', Group)
 module.exports.Settlement = mongoose.model('settlement', Settlement)
 module.exports.Notification = mongoose.model('notification', Notification)
+module.exports.ActivityLog = mongoose.model('activitylog', ActivityLog)
