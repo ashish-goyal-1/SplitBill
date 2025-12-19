@@ -304,12 +304,12 @@ Create a `.env` file in the root directory with the following variables:
 **Example `.env`:**
 ```env
 PORT=3001
-MONGODB_URI=mongodb+srv://user:password@cluster.mongodb.net/splitbill
-ACCESS_TOKEN_SECRET=your_super_secret_jwt_key_here
-REFRESH_TOKEN_SECRET=your_refresh_token_secret
-EMAIL_USER=your_email@gmail.com
-EMAIL_PASS=your_gmail_app_password
-APP_URL=https://splitbill-7p1s.onrender.com
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/splitbill
+ACCESS_TOKEN_SECRET=<your_super_secret_jwt_key_here>
+REFRESH_TOKEN_SECRET=<your_refresh_token_secret>
+EMAIL_USER=<your_email@gmail.com>
+EMAIL_PASS=<your_gmail_app_password>
+APP_URL=https://your-app-url.com
 ```
 
 > **Note**: For Gmail, you need to use an [App Password](https://support.google.com/accounts/answer/185833), not your regular password.
