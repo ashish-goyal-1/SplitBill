@@ -160,7 +160,7 @@ The settlement algorithm uses a **two-step hybrid approach** to minimize transac
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  Input: { Alice: +50, Bob: -30, Charlie: -20, Dave: +30 }   │
+│  Input: { Priya: +50, Rahul: -30, Amit: -20, Neha: +30 }    │
 └─────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -168,23 +168,23 @@ The settlement algorithm uses a **two-step hybrid approach** to minimize transac
 │  STEP 1: Hash-based Exact Match [O(N)]                      │
 │  ─────────────────────────────────────────                  │
 │  • Build Map of {amount → person}                           │
-│  • Find pairs: Bob(-30) ↔ Dave(+30) ✓ Exact match!          │
-│  • Settlement: Bob pays Dave $30                            │
+│  • Find pairs: Rahul(-30) ↔ Neha(+30) ✓ Exact match!        │
+│  • Settlement: Rahul pays Neha ₹30                          │
 └─────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
 │  STEP 2: Sorted Two-Pointer [O(N log N)]                    │
 │  ────────────────────────────────────────                   │
-│  • Remaining: Alice(+50), Charlie(-20)                      │
+│  • Remaining: Priya(+50), Amit(-20)                         │
 │  • Sort creditors & debtors                                 │
 │  • Match using two pointers                                 │
-│  • Settlement: Charlie pays Alice $20                       │
+│  • Settlement: Amit pays Priya ₹20                          │
 └─────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  Output: [ [Bob, Dave, 30], [Charlie, Alice, 20] ]          │
+│  Output: [ [Rahul, Neha, 30], [Amit, Priya, 20] ]           │
 │  Total Complexity: O(N log N)                               │
 └─────────────────────────────────────────────────────────────┘
 ```
