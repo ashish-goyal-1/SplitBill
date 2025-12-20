@@ -1,18 +1,43 @@
 /**
- * Email Service using Nodemailer + Gmail
+ * Email Service using Nodemailer
+ * Supports SendGrid (recommended for production) and Gmail as fallback
  * Handles all email sending functionality for SplitBill
  */
 
 const nodemailer = require('nodemailer');
 
-// Create transporter with Gmail
+/**
+ * Create email transporter
+ * Uses SendGrid if SENDGRID_API_KEY is set, otherwise falls back to Gmail
+ */
 const createTransporter = () => {
+    // Option 1: SendGrid (recommended for production/Render)
+    if (process.env.SENDGRID_API_KEY) {
+        console.log('[Email] Using SendGrid');
+        return nodemailer.createTransport({
+            host: 'smtp.sendgrid.net',
+            port: 587,
+            secure: false,
+            auth: {
+                user: 'apikey', // This is literally the string 'apikey'
+                pass: process.env.SENDGRID_API_KEY
+            }
+        });
+    }
+
+    // Option 2: Gmail (works locally, may have issues on some cloud providers)
+    console.log('[Email] Using Gmail');
     return nodemailer.createTransport({
-        service: 'gmail',
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
         auth: {
             user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS // App password, not regular password
-        }
+            pass: process.env.EMAIL_PASS
+        },
+        connectionTimeout: 60000,
+        greetingTimeout: 30000,
+        socketTimeout: 60000
     });
 };
 
@@ -26,15 +51,19 @@ const createTransporter = () => {
 const sendEmail = async (to, subject, html) => {
     try {
         // Skip if email not configured
-        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+        const hasConfig = process.env.SENDGRID_API_KEY || (process.env.EMAIL_USER && process.env.EMAIL_PASS);
+        if (!hasConfig) {
             console.log('[Email] Email not configured, skipping:', subject);
             return false;
         }
 
         const transporter = createTransporter();
 
+        // Determine sender email
+        const fromEmail = process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@splitbill.com';
+
         const mailOptions = {
-            from: process.env.EMAIL_FROM || `SplitBill <${process.env.EMAIL_USER}>`,
+            from: `SplitBill <${fromEmail}>`,
             to: to,
             subject: subject,
             html: html
