@@ -165,13 +165,17 @@ export default function ViewGroup() {
         <Container>
             {loading ? <GroupViewSkeleton /> :
                 <>
-                    <Box sx={{
-                        bgcolor: (theme) => theme.palette['info'].lighter,
+                    <Box sx={(theme) => ({
+                        bgcolor: theme.palette.mode === 'dark'
+                            ? 'background.paper'
+                            : theme.palette['info'].lighter,
                         borderRadius: 2,
                         p: 2,
-                        color: (theme) => theme.palette['primary'].darker,
-                        pb: 3
-                    }}>
+                        color: 'text.primary',
+                        pb: 3,
+                        border: theme.palette.mode === 'dark' ? 1 : 0,
+                        borderColor: 'divider'
+                    })}>
 
                         <AlertBanner showAlert={alert} alertMessage={alertMessage} severity='error' />
 
@@ -240,9 +244,18 @@ export default function ViewGroup() {
                                         <Chip
                                             avatar={<Avatar sx={{ bgcolor: 'primary.main' }}>{member[0].toUpperCase()}</Avatar>}
                                             label={member.split('@')[0]}
-                                            variant="outlined"
+                                            variant="filled"
                                             color="primary"
                                             size="small"
+                                            sx={(theme) => ({
+                                                bgcolor: theme.palette.mode === 'dark'
+                                                    ? 'primary.main'
+                                                    : 'primary.lighter',
+                                                color: theme.palette.mode === 'dark'
+                                                    ? 'white'
+                                                    : 'primary.darker',
+                                                '& .MuiChip-avatar': { color: 'white' }
+                                            })}
                                         />
                                     </Tooltip>
                                 ))}
@@ -319,7 +332,7 @@ export default function ViewGroup() {
 
                     <Box sx={{
                         mt: -2, p: 2,
-                        bgcolor: 'white',
+                        bgcolor: 'background.paper',
                         minHeight: 50,
                         width: '100%'
 
@@ -549,35 +562,68 @@ export default function ViewGroup() {
                                         : <>
                                             {/* Summary Ribbon - Sticky on desktop, scrollable on mobile */}
                                             <Grid item xs={12}>
-                                                <Box sx={{
+                                                <Box sx={(theme) => ({
                                                     display: 'flex',
                                                     justifyContent: 'space-around',
                                                     alignItems: 'center',
-                                                    bgcolor: 'background.paper',
+                                                    bgcolor: theme.palette.mode === 'dark'
+                                                        ? 'background.paper'
+                                                        : 'info.lighter',
                                                     borderRadius: 2,
                                                     p: 2,
                                                     mb: 2,
-                                                    boxShadow: 1,
+                                                    boxShadow: 2,
+                                                    border: 1,
+                                                    borderColor: theme.palette.mode === 'dark'
+                                                        ? 'divider'
+                                                        : 'info.light',
                                                     position: { md: 'sticky' },
                                                     top: { md: 0 },
                                                     zIndex: { md: 10 }
-                                                }}>
-                                                    <Box sx={{ textAlign: 'center' }}>
-                                                        <Typography variant="caption" color="text.secondary">
+                                                })}>
+                                                    <Box sx={{ textAlign: 'center', px: 2, py: 1 }}>
+                                                        <Typography
+                                                            variant="body2"
+                                                            sx={{
+                                                                color: 'text.secondary',
+                                                                fontWeight: 500,
+                                                                textTransform: 'uppercase',
+                                                                letterSpacing: 0.5,
+                                                                mb: 0.5
+                                                            }}
+                                                        >
                                                             Total Group Spend
                                                         </Typography>
-                                                        <Typography variant="h6" color="primary.main">
+                                                        <Typography
+                                                            variant="h5"
+                                                            sx={{
+                                                                color: 'primary.main',
+                                                                fontWeight: 700
+                                                            }}
+                                                        >
                                                             {currencyFind(group?.groupCurrency)} {groupExpense?.total ? convertToCurrency(groupExpense.total) : 0}
                                                         </Typography>
                                                     </Box>
-                                                    <Divider orientation="vertical" flexItem />
-                                                    <Box sx={{ textAlign: 'center' }}>
-                                                        <Typography variant="caption" color="text.secondary">
+                                                    <Divider orientation="vertical" flexItem sx={{ borderColor: 'primary.light' }} />
+                                                    <Box sx={{ textAlign: 'center', px: 2, py: 1 }}>
+                                                        <Typography
+                                                            variant="body2"
+                                                            sx={{
+                                                                color: 'text.secondary',
+                                                                fontWeight: 500,
+                                                                textTransform: 'uppercase',
+                                                                letterSpacing: 0.5,
+                                                                mb: 0.5
+                                                            }}
+                                                        >
                                                             Your Total Share
                                                         </Typography>
                                                         <Typography
-                                                            variant="h6"
-                                                            color={findUserSplit(group?.split) >= 0 ? 'success.main' : 'error.main'}
+                                                            variant="h5"
+                                                            sx={{
+                                                                color: findUserSplit(group?.split) >= 0 ? 'success.main' : 'error.main',
+                                                                fontWeight: 700
+                                                            }}
                                                         >
                                                             {currencyFind(group?.groupCurrency)} {Math.abs(findUserSplit(group?.split) || 0).toLocaleString()}
                                                         </Typography>
@@ -590,7 +636,12 @@ export default function ViewGroup() {
                                                 <Stack
                                                     direction={{ xs: 'column', md: 'row' }}
                                                     spacing={2}
-                                                    sx={{ mb: 2 }}
+                                                    sx={{
+                                                        mb: 2,
+                                                        p: 2,
+                                                        bgcolor: 'action.hover',
+                                                        borderRadius: 2
+                                                    }}
                                                 >
                                                     <TextField
                                                         size="small"

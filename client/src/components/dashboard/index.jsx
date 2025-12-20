@@ -240,17 +240,25 @@ export default function Dashboard() {
                         <Grid container spacing={3}>
                             {/* Left Column: Your Groups (Clean navigation cards) */}
                             <Grid item xs={12} md={8}>
-                                <Card>
+                                <Card sx={{ borderLeft: 4, borderColor: 'success.main' }}>
                                     <CardContent>
                                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                                             <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <Iconify icon="mdi:folder-multiple" sx={{ fontSize: 24 }} />
+                                                <Iconify icon="mdi:folder-multiple" sx={{ fontSize: 24, color: 'success.main' }} />
                                                 Your Groups ({userGroups.length})
                                             </Typography>
                                             <Link
                                                 component={RouterLink}
                                                 to={configData.USER_GROUPS_URL}
-                                                sx={{ fontSize: '0.875rem' }}
+                                                sx={(theme) => ({
+                                                    fontSize: '0.875rem',
+                                                    fontWeight: 600,
+                                                    color: theme.palette.mode === 'dark'
+                                                        ? '#90caf9'
+                                                        : 'primary.main',
+                                                    textDecoration: 'none',
+                                                    '&:hover': { textDecoration: 'underline' }
+                                                })}
                                             >
                                                 View All
                                             </Link>

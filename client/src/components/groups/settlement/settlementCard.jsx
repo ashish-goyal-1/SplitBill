@@ -85,7 +85,9 @@ const SettlementCard = ({ mySettle, currencyType }) => {
             <Stack direction="row" spacing={1} justifyContent="space-evenly"
                 alignItems="center"
                 sx={{
-                    bgcolor: (theme) => theme.palette['warning'].lighter,
+                    bgcolor: 'background.paper',
+                    border: 1,
+                    borderColor: 'divider',
                     p: 3,
                     borderRadius: 2,
                     boxShadow: 4,
@@ -94,7 +96,7 @@ const SettlementCard = ({ mySettle, currencyType }) => {
                 <Avatar src={gravatarUrl(mySettle[0], { size: 200, default: configData.USER_DEFAULT_LOGO_URL })} alt="photoURL" sx={{ width: 56, height: 56 }} />
                 <Stack spacing={0}>
                     <Tooltip title={mySettle[0]} arrow>
-                        <Typography variant='body' noWrap sx={{ fontWeight: 600, cursor: 'help', ...(!xsUp && { fontSize: 12 }) }}>
+                        <Typography variant='body' noWrap sx={{ fontWeight: 600, cursor: 'help', color: 'text.primary', ...(!xsUp && { fontSize: 12 }) }}>
                             {getDisplayName(mySettle[0])}
                         </Typography>
                     </Tooltip>

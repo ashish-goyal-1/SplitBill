@@ -74,7 +74,7 @@ const WARNING = {
 };
 
 const ERROR = {
-  lighter: '#FFE7D9',
+  lighter: '#FFCCC7',  // More distinctly red/coral (was #FFE7D9 - peachy)
   light: '#FFA48D',
   main: '#FF4842',
   dark: '#B72136',

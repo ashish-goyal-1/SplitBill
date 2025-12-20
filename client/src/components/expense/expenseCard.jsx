@@ -75,7 +75,8 @@ export default function ExpenseCard({ expenseId, expenseName, expenseAmount, exp
                 boxShadow: 5,
                 borderRadius: 1,
                 pl: 1,
-                py: 1
+                py: 1,
+                bgcolor: 'background.paper'
             }}
         >
             <Grid item xs={'auto'} sx={{ mr: 1 }}>
@@ -100,12 +101,12 @@ export default function ExpenseCard({ expenseId, expenseName, expenseAmount, exp
             </Grid>
             <Grid item xs={5} ml={1}>
                 <Typography noWrap variant='h6'
-                    color={(theme) => theme.palette['primary'].dark}
+                    color="text.primary"
                 >
                     {expenseName}
                 </Typography>
                 <Typography variant='body2'
-                    color={(theme) => theme.palette['primary'].dark}
+                    color="text.secondary"
                     sx={{
                         fontSize: 12
                     }}

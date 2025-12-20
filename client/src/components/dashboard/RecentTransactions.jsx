@@ -1,5 +1,5 @@
 
-import { Box, Typography } from '@mui/material'
+import { Box, Typography, Divider } from '@mui/material'
 import { useState } from 'react'
 import { useEffect } from 'react'
 import { getRecentUserExpService } from '../../services/expenseServices'
@@ -34,27 +34,44 @@ export const RecentTransactions = () => {
         <>
             {loading ? <Loading /> :
                 <Box sx={{
-                    boxShadow: 5,
+                    boxShadow: 3,
                     bgcolor: 'background.paper',
                     borderRadius: 2,
+                    borderLeft: 4,
+                    borderColor: 'primary.main',
+                    overflow: 'hidden'
                 }}>
                     <AlertBanner showAlert={alert} alertMessage={alertMessage} severity='error' />
-                    <Typography variant="h6" p={2} >
-                        Your Recent transactions,
+                    <Typography
+                        variant="h6"
+                        sx={(theme) => ({
+                            p: 2,
+                            bgcolor: theme.palette.mode === 'dark'
+                                ? 'primary.dark'
+                                : 'primary.lighter',
+                            color: theme.palette.mode === 'dark'
+                                ? 'common.white'
+                                : 'primary.darker',
+                            borderBottom: 1,
+                            borderColor: 'divider'
+                        })}
+                    >
+                        Your Recent transactions
                     </Typography>
-                    {recentExp?.map(myExpense => (
-
-                        <ExpenseCard
-                            key={myExpense?._id}
-                            expenseId={myExpense?._id}
-                            expenseName={myExpense?.expenseName}
-                            expenseAmount={myExpense?.expenseAmount}
-                            expensePerMember={myExpense?.expensePerMember}
-                            expenseOwner={myExpense?.expenseOwner}
-                            expenseDate={myExpense?.expenseDate}
-                            currencyType={myExpense?.expenseCurrency}
-                            splitType={myExpense?.splitType}
-                        />
+                    {recentExp?.map((myExpense, index) => (
+                        <Box key={myExpense?._id}>
+                            {index > 0 && <Divider />}
+                            <ExpenseCard
+                                expenseId={myExpense?._id}
+                                expenseName={myExpense?.expenseName}
+                                expenseAmount={myExpense?.expenseAmount}
+                                expensePerMember={myExpense?.expensePerMember}
+                                expenseOwner={myExpense?.expenseOwner}
+                                expenseDate={myExpense?.expenseDate}
+                                currencyType={myExpense?.expenseCurrency}
+                                splitType={myExpense?.splitType}
+                            />
+                        </Box>
                     ))}
                 </Box>}
         </>

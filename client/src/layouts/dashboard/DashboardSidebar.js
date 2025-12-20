@@ -36,7 +36,12 @@ const AccountStyle = styled('div')(({ theme }) => ({
   alignItems: 'center',
   padding: theme.spacing(2, 2.5),
   borderRadius: Number(theme.shape.borderRadius) * 1.5,
-  backgroundColor: theme.palette.primary['lighter'],
+  backgroundColor: theme.palette.mode === 'dark'
+    ? theme.palette.action.hover
+    : theme.palette.primary['lighter'],
+  border: theme.palette.mode === 'dark'
+    ? `1px solid ${theme.palette.divider}`
+    : 'none',
 }));
 
 // ----------------------------------------------------------------------

@@ -81,15 +81,19 @@ export default function GroupCards({ title, description, groupMembers, share, cu
       </CategoryStyle>
 
       <Box pt={6} px={2} pb={3}
-        sx={{
-          bgcolor: (theme) => theme.palette[color].lighter,
-          color: (theme) => theme.palette[color].darker
-        }}
+        sx={(theme) => ({
+          bgcolor: theme.palette.mode === 'dark'
+            ? theme.palette[color].dark
+            : theme.palette[color].lighter,
+          color: theme.palette.mode === 'dark'
+            ? 'common.white'
+            : theme.palette[color].darker
+        })}
       >
-        <Typography noWrap variant="h3" fontSize={30} sx={{ opacity: 0.72 }}>
+        <Typography noWrap variant="h3" fontSize={30} sx={{ opacity: 0.9 }}>
           {title}
         </Typography>
-        <Typography noWrap variant="subtitle2" fontSize={14} color={'text.secondary'}>
+        <Typography noWrap variant="subtitle2" fontSize={14} sx={{ opacity: 0.85, fontWeight: 500 }}>
           {description} &nbsp;</Typography>
       </Box>
       <CardContent
@@ -115,7 +119,7 @@ export default function GroupCards({ title, description, groupMembers, share, cu
             borderRadius: 1,
             color: share < 0 ? (theme) => theme.palette['error'].darker : (theme) => theme.palette['success'].darker
           }}>
-            <b> {share < 0? <>You owe</> : <>You are owed</>} : &nbsp;
+            <b> {share < 0 ? <>You owe</> : <>You are owed</>} : &nbsp;
               {currencyFind(currencyType)} {convertToCurrency(Math.abs(Math.floor(share)))}</b>
           </Typography>
         </Stack>
@@ -138,7 +142,7 @@ export default function GroupCards({ title, description, groupMembers, share, cu
           <Grid item md={6} xs={12}>
             <AvatarGroup max={3} sx={{ width: '100%' }}>
               {groupMembers.map(member => (
-                <Avatar key={member} alt={member.toUpperCase()} src={gravatarUrl(member, { size: 350 ,default: configData.USER_DEFAULT_LOGO_URL})} />
+                <Avatar key={member} alt={member.toUpperCase()} src={gravatarUrl(member, { size: 350, default: configData.USER_DEFAULT_LOGO_URL })} />
               ))}
             </AvatarGroup>
           </Grid>
