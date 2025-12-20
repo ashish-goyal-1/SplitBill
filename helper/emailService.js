@@ -1,33 +1,45 @@
 /**
- * Email Service using Nodemailer
- * Supports SendGrid (recommended for production) and Gmail as fallback
+ * Email Service
+ * Uses SendGrid Web API (recommended for production) or Gmail SMTP (local dev)
  * Handles all email sending functionality for SplitBill
  */
 
 const nodemailer = require('nodemailer');
 
+// SendGrid Web API client (uses HTTPS, not SMTP - works on Render)
+let sgMail = null;
+try {
+    sgMail = require('@sendgrid/mail');
+} catch (e) {
+    console.log('[Email] @sendgrid/mail not installed, will use SMTP fallback');
+}
+
 /**
- * Create email transporter
- * Uses SendGrid if SENDGRID_API_KEY is set, otherwise falls back to Gmail
+ * Send email using SendGrid Web API
  */
-const createTransporter = () => {
-    // Option 1: SendGrid (recommended for production/Render)
-    if (process.env.SENDGRID_API_KEY) {
-        console.log('[Email] Using SendGrid');
-        return nodemailer.createTransport({
-            host: 'smtp.sendgrid.net',
-            port: 587,
-            secure: false,
-            auth: {
-                user: 'apikey', // This is literally the string 'apikey'
-                pass: process.env.SENDGRID_API_KEY
-            }
-        });
+const sendEmailViaSendGrid = async (to, subject, html, fromEmail) => {
+    if (!sgMail) {
+        throw new Error('SendGrid mail package not available');
     }
 
-    // Option 2: Gmail (works locally, may have issues on some cloud providers)
-    console.log('[Email] Using Gmail');
-    return nodemailer.createTransport({
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+    const msg = {
+        to: to,
+        from: fromEmail, // Must be verified sender in SendGrid
+        subject: subject,
+        html: html,
+    };
+
+    await sgMail.send(msg);
+    return { messageId: `sendgrid-${Date.now()}` };
+};
+
+/**
+ * Send email using Gmail SMTP (for local development)
+ */
+const sendEmailViaGmail = async (to, subject, html, fromEmail) => {
+    const transporter = nodemailer.createTransport({
         host: 'smtp.gmail.com',
         port: 587,
         secure: false,
@@ -38,6 +50,13 @@ const createTransporter = () => {
         connectionTimeout: 60000,
         greetingTimeout: 30000,
         socketTimeout: 60000
+    });
+
+    return transporter.sendMail({
+        from: `SplitBill <${fromEmail}>`,
+        to: to,
+        subject: subject,
+        html: html
     });
 };
 
@@ -57,19 +76,21 @@ const sendEmail = async (to, subject, html) => {
             return false;
         }
 
-        const transporter = createTransporter();
-
         // Determine sender email
         const fromEmail = process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@splitbill.com';
 
-        const mailOptions = {
-            from: `SplitBill <${fromEmail}>`,
-            to: to,
-            subject: subject,
-            html: html
-        };
+        let info;
 
-        const info = await transporter.sendMail(mailOptions);
+        // Use SendGrid Web API if available (recommended for production)
+        if (process.env.SENDGRID_API_KEY && sgMail) {
+            console.log('[Email] Using SendGrid Web API');
+            info = await sendEmailViaSendGrid(to, subject, html, fromEmail);
+        } else {
+            // Fall back to Gmail SMTP (works locally)
+            console.log('[Email] Using Gmail SMTP');
+            info = await sendEmailViaGmail(to, subject, html, fromEmail);
+        }
+
         console.log('[Email] Sent successfully:', info.messageId);
         return true;
     } catch (error) {
