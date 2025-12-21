@@ -8,9 +8,6 @@ import { convertToCurrency, currencyFind } from '../../../utils/helper';
 import configData from '../../../config.json';
 import Loading from '../../loading';
 
-const profile = JSON.parse(localStorage.getItem('profile'));
-const currentUserEmail = profile?.emailId;
-
 export default function MyBalance({ currencyType }) {
     const params = useParams();
     const [loading, setLoading] = useState(true);
@@ -22,6 +19,10 @@ export default function MyBalance({ currencyType }) {
         const fetchBalances = async () => {
             setLoading(true);
             try {
+                // Get fresh profile data from localStorage on each fetch
+                const profile = JSON.parse(localStorage.getItem('profile'));
+                const currentUserEmail = profile?.emailId;
+
                 const response = await axios.post(
                     '/api/group/v1/settlement',
                     { id: params.groupId },

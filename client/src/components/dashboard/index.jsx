@@ -176,7 +176,8 @@ export default function Dashboard() {
                                         bgcolor: (theme) => theme.palette['success'].lighter,
                                         borderRadius: 2,
                                         p: 2.5,
-                                        minHeight: 90
+                                        minHeight: 90,
+                                        height: '100%'
                                     }}>
                                         <LabelIconStyle sx={{ bgcolor: (theme) => theme.palette['success'].dark, py: '18px' }}>
                                             <Iconify icon="mdi:cash-plus" sx={{ width: '100%', height: '100%', color: 'white' }} />
@@ -198,7 +199,8 @@ export default function Dashboard() {
                                         bgcolor: (theme) => theme.palette['error'].lighter,
                                         borderRadius: 2,
                                         p: 2.5,
-                                        minHeight: 90
+                                        minHeight: 90,
+                                        height: '100%'
                                     }}>
                                         <LabelIconStyle sx={{ bgcolor: (theme) => theme.palette['error'].dark, py: '18px' }}>
                                             <Iconify icon="mdi:cash-minus" sx={{ width: '100%', height: '100%', color: 'white' }} />
@@ -250,15 +252,13 @@ export default function Dashboard() {
                                             <Link
                                                 component={RouterLink}
                                                 to={configData.USER_GROUPS_URL}
-                                                sx={(theme) => ({
+                                                underline="none"
+                                                sx={{
                                                     fontSize: '0.875rem',
                                                     fontWeight: 600,
-                                                    color: theme.palette.mode === 'dark'
-                                                        ? '#90caf9'
-                                                        : 'primary.main',
-                                                    textDecoration: 'none',
+                                                    color: 'text.primary !important',
                                                     '&:hover': { textDecoration: 'underline' }
-                                                })}
+                                                }}
                                             >
                                                 View All
                                             </Link>
@@ -286,14 +286,7 @@ export default function Dashboard() {
                             <Grid container spacing={3}>
                                 {/* Groupwise Expense Chart */}
                                 <Grid item xs={12} md={6}>
-                                    <Card>
-                                        <CardContent>
-                                            <Typography variant="subtitle2" sx={{ mb: 2, color: 'text.secondary' }}>
-                                                Spending by Group
-                                            </Typography>
-                                            <GroupExpenseChart />
-                                        </CardContent>
-                                    </Card>
+                                    <GroupExpenseChart />
                                 </Grid>
 
                                 {/* Category Chart */}
@@ -306,6 +299,9 @@ export default function Dashboard() {
                                     <CalenderExpenseGraph />
                                 </Grid>
                             </Grid>
+                            <Typography variant="caption" sx={{ mt: 2, display: 'block', color: 'text.secondary', textAlign: 'center' }}>
+                                * Values shown in original group currency
+                            </Typography>
                         </Box>
                     )}
 

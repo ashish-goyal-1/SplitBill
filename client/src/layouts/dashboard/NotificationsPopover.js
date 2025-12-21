@@ -26,8 +26,6 @@ import MenuPopover from '../../components/MenuPopover';
 
 // ----------------------------------------------------------------------
 
-const profile = JSON.parse(localStorage.getItem('profile'));
-
 export default function NotificationsPopover() {
   const anchorRef = useRef(null);
   const [notifications, setNotifications] = useState([]);
@@ -35,13 +33,19 @@ export default function NotificationsPopover() {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(null);
 
+  // Get fresh profile on each render
+  const getProfile = () => JSON.parse(localStorage.getItem('profile'));
+
   // Fetch notifications on mount and periodically
   const fetchNotifications = async () => {
+    const profile = getProfile();
+    if (!profile?.emailId) return;
+
     try {
       const response = await axios.post(
         '/api/notification/v1/list',
-        { userId: profile?.emailId },
-        { headers: { Authorization: `Bearer ${profile?.accessToken}` } }
+        { userId: profile.emailId },
+        { headers: { Authorization: `Bearer ${profile.accessToken}` } }
       );
       setNotifications(response.data.notifications || []);
       setUnreadCount(response.data.unreadCount || 0);
@@ -67,30 +71,32 @@ export default function NotificationsPopover() {
   };
 
   const handleMarkAllAsRead = async () => {
+    const profile = getProfile();
     try {
       await axios.post(
         '/api/notification/v1/readAll',
         { userId: profile?.emailId },
         { headers: { Authorization: `Bearer ${profile?.accessToken}` } }
       );
-      setNotifications(notifications.map(n => ({ ...n, isRead: true })));
-      setUnreadCount(0);
+      // Re-fetch to get accurate state from server
+      await fetchNotifications();
     } catch (error) {
       console.error('Error marking all as read:', error);
     }
   };
 
   const handleNotificationClick = async (notificationId) => {
+    const profile = getProfile();
+    // Close the popover first to allow navigation
+    handleClose();
+
     try {
       await axios.post(
         '/api/notification/v1/read',
         { notificationId },
         { headers: { Authorization: `Bearer ${profile?.accessToken}` } }
       );
-      setNotifications(notifications.map(n =>
-        n._id === notificationId ? { ...n, isRead: true } : n
-      ));
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      // Don't re-fetch here - let navigation happen, next open will fetch fresh data
     } catch (error) {
       console.error('Error marking as read:', error);
     }
@@ -113,7 +119,7 @@ export default function NotificationsPopover() {
         open={Boolean(open)}
         anchorEl={open}
         onClose={handleClose}
-        sx={{ width: 360, p: 0, mt: 1.5, ml: 0.75, maxHeight: 400 }}
+        sx={{ width: 360, p: 0, mt: 1.5, ml: 0.75, overflow: 'hidden' }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', py: 2, px: 2.5 }}>
           <Box sx={{ flexGrow: 1 }}>
@@ -134,7 +140,7 @@ export default function NotificationsPopover() {
 
         <Divider sx={{ borderStyle: 'dashed' }} />
 
-        <Scrollbar sx={{ maxHeight: 300 }}>
+        <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
           <List disablePadding>
             {notifications.length === 0 ? (
               <Box sx={{ p: 3, textAlign: 'center' }}>
@@ -144,7 +150,7 @@ export default function NotificationsPopover() {
                 </Typography>
               </Box>
             ) : (
-              notifications.slice(0, 10).map((notification) => (
+              notifications.slice(0, 3).map((notification) => (
                 <NotificationItem
                   key={notification._id}
                   notification={notification}
@@ -153,7 +159,7 @@ export default function NotificationsPopover() {
               ))
             )}
           </List>
-        </Scrollbar>
+        </Box>
       </MenuPopover>
     </>
   );

@@ -40,7 +40,7 @@ export default function GroupCards({ groups = [] }) {
                     >
                         <CardActionArea
                             component={RouterLink}
-                            to={`${configData.VIEW_GROUP_URL}/${group._id}`}
+                            to={`${configData.VIEW_GROUP_URL}${group._id}`}
                             sx={{ height: '100%' }}
                         >
                             <CardContent sx={{ p: 2.5 }}>

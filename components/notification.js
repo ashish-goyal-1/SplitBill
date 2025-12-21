@@ -13,6 +13,8 @@ exports.getNotifications = async (req, res) => {
     try {
         const { userId } = req.body;
 
+        console.log('[Notification] Fetching for userId:', userId);
+
         const notifications = await model.Notification
             .find({ userId })
             .sort({ createdAt: -1 })
@@ -22,6 +24,8 @@ exports.getNotifications = async (req, res) => {
             userId,
             isRead: false
         });
+
+        console.log('[Notification] Found:', notifications.length, 'notifications, Unread:', unreadCount);
 
         res.status(200).json({
             success: true,

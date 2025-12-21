@@ -12,10 +12,11 @@ A powerful real-time full-stack MERN app for smart group expense tracking, optim
 
 ## 📑 Table of Contents
 
+- [Screenshots](#-screenshots)
 - [Features](#-features)
 - [Algorithm Details](#-algorithm-details)
 - [Tech Stack](#-tech-stack)
-- [Screenshots](#-screenshots)
+- [Architecture](#-architecture)
 - [Installation](#-installation--setup)
 - [API Endpoints](#-api-endpoints)
 - [Environment Variables](#-environment-variables)
@@ -24,131 +25,107 @@ A powerful real-time full-stack MERN app for smart group expense tracking, optim
 
 ---
 
+## 📸 Screenshots
+
+### Dashboard
+| Light Mode | Dark Mode |
+|------------|----------|
+| ![Dashboard Light](Screenshots/Dashboard%20(Light).png) | ![Dashboard Dark](Screenshots/Dashboard%20(Dark).png) |
+
+### Analytics & Group Views
+| Analytics Overview | Expense List |
+|-------------------|---------------|
+| ![Analytics](Screenshots/Dashboard-%20Analytics.png) | ![Group Expenses](Screenshots/Group%20View%20-%20Expenses.png) |
+
+| Balance & Settlements | Notifications |
+|----------------------|---------------|
+| ![Balance 1](Screenshots/Group%20View%20-%20Balance%20-1.png) | ![Notifications](Screenshots/Notifications%20popover.png) |
+
+### Add Expense
+![Add Expense Modal](Screenshots/Add%20Expense%20Modal.png)
+
+
 ## ✨ Features
 
 ### 🔐 Authentication & Security
 - Secure login & registration with **JWT dual-token system**
 - **Access Token** (15 min) + **Refresh Token** (7 days) with rotation
 - Encrypted passwords (bcryptjs)
+- **Email verification** on registration with token-based flow
+- **Password reset** via secure email links (15 min expiry)
 - Profile view/edit with Gravatar support
-- Automatic token refresh for seamless UX
 
 ### 👥 Group Management
-- Create/edit/delete groups
+- Create/edit/delete groups with category tags (Trip, Home, Couple, etc.)
 - **Privacy-Focused Member Search**: Search by email only (strangers can't be found by name)
 - **Pending Invite System**: Strangers must accept invite; recent contacts are added directly
 - **Non-User Invites**: Send email invitations to people not yet on SplitBill
-- Multiple currencies supported (INR, USD, EUR)
-- Group categories: Trip, Home, Couple, etc.
+- **Share Group**: Copy invite link to clipboard with one click
+- Multiple currencies supported (INR, USD, EUR, GBP, etc.)
+- **Activity Feed (Audit Trail)**: Complete history of group actions with timestamps
 
 ### 💸 Expense Tracking
-- Add/edit/delete group expenses
-- Categorize and filter by type/date
-- **Three Split Types Supported:**
-  - ⚖️ **Equal Split**: Auto-divide expense equally among members
-  - 💵 **Exact Amount**: Specify precise amounts each person owes
-  - 📊 **Percentage Split**: Define percentages per person (e.g., 50%, 30%, 20%)
-- Recurring options: daily/weekly/monthly/yearly
+- Add/edit/delete group expenses with categories
+- **Global Quick Add**: Floating Action Button (FAB) for one-click expense creation from dashboard
+- **Three Split Types:**
+  - ⚖️ **Equal Split**: Auto-divide equally among members
+  - 💵 **Exact Amount**: Specify precise amounts per person
+  - 📊 **Percentage Split**: Define percentages (e.g., 50%, 30%, 20%)
+- **Recurring Expenses**: daily/weekly/monthly/yearly automation
+- **Search & Filter**: Instant search by name, filter by category or payer
 
 ### 💰 Settlements & Smart Splitting
 - **Hybrid O(N log N) Algorithm** for optimal debt simplification:
-  - **Step 1**: O(N) Hash-based exact match heuristic
-  - **Step 2**: O(N log N) Sorted two-pointer greedy
+  - Step 1: O(N) Hash-based exact match heuristic
+  - Step 2: O(N log N) Sorted two-pointer greedy
 - Minimizes number of transactions between group members
-- Balance view (who owes whom)
-- Record settlements and payment methods
+- **Multi-Currency Balance Cards**: Debts aggregated by currency (no mixing ₹ + $)
+- Balance view showing who owes whom
+- Record settlements with payment method tracking
 
-### 📧 Email System
+### 📧 Email & Notifications
+- **Real-time in-app notifications** with unread badge
 - Manual nudges for unsettled balances
 - Daily automatic reminders via node-cron
-- Settlement confirmation notifications
+- Settlement confirmation emails
 
 ### 📊 Analytics & Dashboard
+- **Action-First Dashboard** with 3-zone layout:
+  - Status zone: Greeting + Multi-currency balance cards
+  - Navigation zone: Compact group cards + Recent transactions
+  - Analytics zone: All charts consolidated
 - **MongoDB Aggregation Pipelines** for real-time analytics
-- Category-wise expense breakdown
-- Monthly spending trends
-- Top spenders in group
-- Daily spending breakdown
-- Dashboard widgets for quick overview
+- Category-wise expense breakdown (Pie chart)
+- Groupwise spending distribution
+- Monthly spending trends (Bar chart)
 
-### 🔔 Real-Time Updates & Notifications
-- **Socket.io WebSocket** for instant expense updates
-- Real-time sync when group members add/edit/delete expenses
-- In-app notifications with unread badge
+### 🔔 Real-Time Sync (Socket.io)
+- **WebSocket-powered** instant expense updates
+- Live sync when group members add/edit/delete expenses
 - Automatic UI refresh without page reload
+- Real-time notification delivery
 
 ### 📤 Export Reports
-- 📄 Export to PDF: Full group expense report
-- 📊 Export to CSV: All group data as spreadsheet
+- 📄 **Export to PDF**: Full group expense report
+- 📊 **Export to CSV**: All group data as spreadsheet
 
-### ⚡ Performance Optimizations
+### ⚡ Performance & PWA
 - **Gzip Compression**: ~70% reduction in response size
 - **Code Splitting**: React.lazy() for route-based chunking
 - **Service Worker Caching**: PWA with offline support
 - Lazy loaded routes & optimized bundle
+- **Installable** on mobile & desktop
+
+### 🎨 UI/UX
+- Material UI with **dark/light mode** toggle
+- Custom icons & smooth animations
+- Empty-state illustrations
+- Responsive design for all screen sizes
 
 ### 🧪 Testing
 - **Jest Unit Tests** for algorithm validation
 - 15+ test cases covering correctness, edge cases, and performance
 - Run tests: `npm test`
-
-### 🎨 UI/UX Enhancements
-- Material UI theming (dark/light toggle)
-- **PWA installable** on mobile & desktop
-- Custom icons & smooth animations
-- Empty-state illustrations for cleaner UI
-
-### 🆕 Latest Features (v2.0)
-
-#### 📝 Activity Feed (Audit Trail)
-- **Complete history** of all group actions
-- Tracks: expense add/edit/delete, settlements, member joins
-- Timeline view with relative timestamps
-- Answers "Who deleted that expense?"
-
-#### 🔍 Search & Filter
-- **Instant search** expenses by name/description
-- **Filter by category**: Food, Transport, Entertainment, etc.
-- **Filter by payer**: See only specific member's expenses
-- Client-side filtering for instant results
-
-#### 🏠 Dashboard Redesign (Action-First)
-- **3-Zone Layout**:
-  - Zone 1 (Status): Simple greeting + Balance cards at top
-  - Zone 2 (Navigation): Compact Group Cards + Recent transactions
-  - Zone 3 (Analytics): All charts consolidated (Spending by Group, Category, Monthly)
-- **Compact Group Cards**: Clickable grid with name, member count, category tag
-- **Removed Hero Banner**: Clean, action-focused interface
-
-#### 💱 Multi-Currency Balance Cards
-- **Smart Currency Grouping**: Debts aggregated by currency (no mixing ₹ + $)
-- **Single currency**: Big number display (₹ 1,200)
-- **Multiple currencies**: Vertical list (₹ 1,200, $ 25, € 10)
-- **3+ currencies**: Scrollable list with max height
-- Uses `currencyFind()` helper for symbols (₹, $, €, £, ¥)
-
-#### ⚡ Global Quick Add
-- **Floating Action Button (FAB)** on dashboard
-- One-click expense creation from anywhere
-- Group selector → Dynamic member loading
-- No need to navigate into specific group first
-
-#### 🔗 Share Group
-- **Share button** in group header
-- Copies group link to clipboard
-- Tooltip: "Copy invite link"
-- Snackbar feedback confirmation
-
-#### 📊 View Group Layout Cleanup
-- **Summary Ribbon**: Total Spend + Your Share at top
-- Sticky on desktop, scrollable on mobile
-- **Expenses Tab**: Clean ledger (expenses only)
-- **Balance Tab**: Analytics hub (charts moved here)
-
-#### 🔐 Email Verification & Password Reset
-- Email verification on registration
-- Secure password reset flow
-- Token-based verification (15 min expiry)
 
 ---
 
@@ -349,22 +326,9 @@ npm run dev
 
 ---
 
-## 📸 Screenshots
+## 📄 Architecture
 
-### Dashboard
-![Dashboard](Screenshots/dashboard.png)
-
-### Group View with Export Icons
-![Group View](Screenshots/group-view.png)
-
-### Analytics Page
-![Analytics](Screenshots/analytics.png)
-
-### Dark Mode Toggle
-![Dark Mode](Screenshots/dark-mode.png)
-
-### Add Expense Dialog
-![Add Expense](Screenshots/add-expense.png)
+For a detailed breakdown of the technical architecture, project structure, and data flow, please refer to the [architecture.md](./architecture.md) file.
 
 ---
 

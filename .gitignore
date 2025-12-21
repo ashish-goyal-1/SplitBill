@@ -49,6 +49,10 @@ DB/
 # Documentation (internal)
 docs/
 
+# Demo script (local only)
+SplitBill_Demo_Script.md
+SplitBill_Functional_Specification.md
+
 # TypeScript v1 declaration files
 typings/
 
