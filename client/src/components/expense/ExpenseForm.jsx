@@ -263,6 +263,7 @@ export default function ExpenseForm({
                                         <TextField
                                             size="small"
                                             type="number"
+                                            onWheel={(e) => e.target.blur()}
                                             sx={{ width: 140 }}
                                             InputProps={{
                                                 startAdornment: (
@@ -294,6 +295,7 @@ export default function ExpenseForm({
                             fullWidth
                             name="expenseAmount"
                             type="number"
+                            onWheel={(e) => e.target.blur()}
                             label="Expense Amount"
                             variant="outlined"
                             {...getFieldProps('expenseAmount')}
