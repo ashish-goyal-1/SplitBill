@@ -249,5 +249,46 @@ describe('Hybrid Debt Settlement Algorithm', () => {
 
             expect(reduction).toBeGreaterThanOrEqual(66);
         });
+
+        test('should achieve at least 80% reduction for 10 people', () => {
+            // 10 people: 5 creditors, 5 debtors
+            const balances = {
+                A: 100, B: 80, C: 60, D: 40, E: 20,
+                F: -50, G: -50, H: -50, I: -75, J: -75
+            };
+            const result = simplifyDebts(balances);
+
+            const n = 10;
+            const naiveMax = (n * (n - 1)) / 2; // 45 transactions worst case
+            const optimized = result.length;
+
+            const reduction = ((naiveMax - optimized) / naiveMax) * 100;
+
+            console.log(`  📊 10 people: ${naiveMax} naive → ${optimized} optimized = ${reduction.toFixed(0)}% reduction`);
+
+            expect(reduction).toBeGreaterThanOrEqual(80);
+        });
+
+        test('should achieve at least 90% reduction for 20 people', () => {
+            // 20 people with varying balances
+            const balances = {};
+            const creditors = [150, 120, 100, 80, 60, 50, 40, 30, 20, 10];
+            const debtors = [-80, -75, -70, -65, -60, -55, -50, -45, -40, -20];
+
+            creditors.forEach((amt, i) => balances[`C${i}`] = amt);
+            debtors.forEach((amt, i) => balances[`D${i}`] = amt);
+
+            const result = simplifyDebts(balances);
+
+            const n = 20;
+            const naiveMax = (n * (n - 1)) / 2; // 190 transactions worst case
+            const optimized = result.length;
+
+            const reduction = ((naiveMax - optimized) / naiveMax) * 100;
+
+            console.log(`  📊 20 people: ${naiveMax} naive → ${optimized} optimized = ${reduction.toFixed(0)}% reduction`);
+
+            expect(reduction).toBeGreaterThanOrEqual(90);
+        });
     });
 });

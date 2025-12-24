@@ -16,12 +16,11 @@ A powerful real-time full-stack MERN app for smart group expense tracking, optim
 - [Features](#-features)
 - [Algorithm Details](#-algorithm-details)
 - [Tech Stack](#-tech-stack)
-- [Architecture](#-architecture)
-- [Installation](#-installation--setup)
 - [API Endpoints](#-api-endpoints)
 - [Environment Variables](#-environment-variables)
-- [Testing](#-testing)
-- [Author](#-author)
+- [Getting Started](#-getting-started)
+- [Architecture](#-architecture)
+- [Developer](#-developer)
 
 ---
 
@@ -124,7 +123,7 @@ A powerful real-time full-stack MERN app for smart group expense tracking, optim
 
 ### 🧪 Testing
 - **Jest Unit Tests** for algorithm validation
-- 15+ test cases covering correctness, edge cases, and performance
+- 20+ test cases covering correctness, edge cases, and performance benchmarks
 - Run tests: `npm test`
 
 ---
@@ -296,7 +295,7 @@ APP_URL=https://your-app-url.com
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js v14+
+- Node.js v16+ (LTS recommended)
 - MongoDB Atlas account
 - Gmail app password for emails
 
