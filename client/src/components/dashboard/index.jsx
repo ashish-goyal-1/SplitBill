@@ -1,17 +1,15 @@
-import { Box, Container, Fab, Grid, Typography, Card, CardContent, Stack, styled } from "@mui/material"
+import { Box, Container, Fab, Grid, Typography, Card, CardContent, Stack, styled, Skeleton } from "@mui/material"
 import { useEffect, useState, lazy, Suspense } from "react"
 import { Link } from "react-router-dom"
 import { getUserExpenseService } from "../../services/expenseServices"
 import { getUserGroupsService } from "../../services/groupServices"
 import { DashboardSkeleton, ChartSkeleton } from "../skeletons"
-import { RecentTransactions } from "./RecentTransactions"
 import { WelcomeMessage } from "./welcomeMessage"
-import PendingInvites from "./PendingInvites"
-import GroupCards from "./GroupCards"
 import { Link as RouterLink } from 'react-router-dom';
 import configData from '../../config.json'
 import Iconify from "../Iconify"
 import { convertToCurrency, currencyFind } from "../../utils/helper"
+import LazySection from "../LazySection"
 
 // Lazy load heavy chart components (these use named exports)
 const CalenderExpenseGraph = lazy(() => import("./CalenderExpenseGraph").then(module => ({ default: module.CalenderExpenseGraph })));
@@ -20,6 +18,11 @@ const GroupExpenseChart = lazy(() => import("./GroupExpenseChart").then(module =
 
 // Lazy load modal (uses default export)
 const GlobalAddExpenseModal = lazy(() => import("./GlobalAddExpenseModal"));
+
+// Lazy load non-critical components to reduce main bundle
+const RecentTransactions = lazy(() => import("./RecentTransactions").then(module => ({ default: module.RecentTransactions })));
+const GroupCards = lazy(() => import("./GroupCards"));
+const PendingInvites = lazy(() => import("./PendingInvites"));
 
 
 
@@ -170,7 +173,9 @@ export default function Dashboard() {
                         <WelcomeMessage />
 
                         {/* Pending Invites Alert */}
-                        <PendingInvites />
+                        <Suspense fallback={null}>
+                            <PendingInvites />
+                        </Suspense>
 
                         {/* Balance Cards - Multi-Currency Support */}
                         {!newUser && (
@@ -269,51 +274,58 @@ export default function Dashboard() {
                                             </Link>
                                         </Box>
                                         {/* Compact Group Cards - No Chart! */}
-                                        <GroupCards groups={userGroups.slice(0, 6)} />
+                                        <Suspense fallback={<Skeleton variant="rectangular" height={200} />}>
+                                            <GroupCards groups={userGroups.slice(0, 6)} />
+                                        </Suspense>
                                     </CardContent>
                                 </Card>
                             </Grid>
 
                             {/* Right Column: Recent Transactions */}
                             <Grid item xs={12} md={4}>
-                                <RecentTransactions />
+                                <Suspense fallback={<Skeleton variant="rectangular" height={300} sx={{ borderRadius: 2 }} />}>
+                                    <RecentTransactions />
+                                </Suspense>
                             </Grid>
                         </Grid>
                     )}
 
                     {/* =================== ZONE 3: ANALYTICS OVERVIEW (Bottom) =================== */}
+                    {/* Wrapped in LazySection to defer chart loading until user scrolls here */}
                     {!newUser && (
-                        <Box sx={{ mt: 4 }}>
-                            <Typography variant="h6" component="h2" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Iconify icon="mdi:chart-line" sx={{ fontSize: 24 }} />
-                                Analytics Overview
-                            </Typography>
-                            <Grid container spacing={3}>
-                                {/* Groupwise Expense Chart */}
-                                <Grid item xs={12} md={6}>
-                                    <Suspense fallback={<ChartSkeleton height={300} />}>
-                                        <GroupExpenseChart />
-                                    </Suspense>
-                                </Grid>
+                        <LazySection height={600} rootMargin="200px">
+                            <Box sx={{ mt: 4 }}>
+                                <Typography variant="h6" component="h2" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Iconify icon="mdi:chart-line" sx={{ fontSize: 24 }} />
+                                    Analytics Overview
+                                </Typography>
+                                <Grid container spacing={3}>
+                                    {/* Groupwise Expense Chart */}
+                                    <Grid item xs={12} md={6}>
+                                        <Suspense fallback={<ChartSkeleton height={300} />}>
+                                            <GroupExpenseChart />
+                                        </Suspense>
+                                    </Grid>
 
-                                {/* Category Chart */}
-                                <Grid item xs={12} md={6}>
-                                    <Suspense fallback={<ChartSkeleton height={300} />}>
-                                        <CategoryExpenseChart />
-                                    </Suspense>
-                                </Grid>
+                                    {/* Category Chart */}
+                                    <Grid item xs={12} md={6}>
+                                        <Suspense fallback={<ChartSkeleton height={300} />}>
+                                            <CategoryExpenseChart />
+                                        </Suspense>
+                                    </Grid>
 
-                                {/* Monthly Expense Graph - Full Width */}
-                                <Grid item xs={12}>
-                                    <Suspense fallback={<ChartSkeleton height={250} />}>
-                                        <CalenderExpenseGraph />
-                                    </Suspense>
+                                    {/* Monthly Expense Graph - Full Width */}
+                                    <Grid item xs={12}>
+                                        <Suspense fallback={<ChartSkeleton height={250} />}>
+                                            <CalenderExpenseGraph />
+                                        </Suspense>
+                                    </Grid>
                                 </Grid>
-                            </Grid>
-                            <Typography variant="caption" sx={{ mt: 2, display: 'block', color: 'text.secondary', textAlign: 'center' }}>
-                                * Values shown in original group currency
-                            </Typography>
-                        </Box>
+                                <Typography variant="caption" sx={{ mt: 2, display: 'block', color: 'text.secondary', textAlign: 'center' }}>
+                                    * Values shown in original group currency
+                                </Typography>
+                            </Box>
+                        </LazySection>
                     )}
 
                     {/* =================== GLOBAL FAB =================== */}
