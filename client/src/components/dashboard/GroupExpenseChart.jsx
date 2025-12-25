@@ -79,7 +79,7 @@ export const GroupExpenseChart = () => {
                 borderRadius: 2,
                 boxShadow: 5,
             }}>
-                <Typography variant="h6" mb={2}>
+                <Typography variant="h6" component="h3" mb={2}>
                     Groupwise Expense Chart
                 </Typography>
                 <AlertBanner showAlert={alert} alertMessage={alertMessage} severity='error' />

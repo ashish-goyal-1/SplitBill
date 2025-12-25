@@ -58,6 +58,7 @@ export default function GroupCards({ groups = [] }) {
                                     <Box sx={{ flex: 1, minWidth: 0 }}>
                                         <Typography
                                             variant="subtitle1"
+                                            component="h3"
                                             sx={{
                                                 fontWeight: 600,
                                                 overflow: 'hidden',

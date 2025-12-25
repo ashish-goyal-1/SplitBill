@@ -125,7 +125,7 @@ export default function Dashboard() {
         if (balances.length === 1) {
             // Single currency - show big number
             return (
-                <Typography variant="h4" sx={{ color: (theme) => theme.palette[colorKey].darker }}>
+                <Typography variant="h4" component="h3" sx={{ color: (theme) => theme.palette[colorKey].darker }}>
                     {currencyFind(balances[0].currency)} {convertToCurrency(balances[0].amount)}
                 </Typography>
             );

@@ -198,9 +198,21 @@ export function DashboardSkeleton() {
                         </Card>
                     </Grid>
 
-                    {/* Summary cards skeleton */}
+                    {/* Summary cards skeleton - Matching 2-column content layout to prevent CLS */}
                     <Grid item xs={12}>
-                        <SummaryCardsSkeleton />
+                        <Grid container spacing={2}>
+                            {[...Array(2)].map((_, index) => (
+                                <Grid item xs={12} md={6} key={index}>
+                                    <Card sx={{ p: 2.5, height: '100%', minHeight: 90, display: 'flex', alignItems: 'center' }}>
+                                        <Skeleton variant="circular" width={60} height={60} />
+                                        <Box sx={{ ml: 2, flex: 1 }}>
+                                            <Skeleton variant="text" width="40%" height={24} sx={{ mb: 1 }} />
+                                            <Skeleton variant="text" width="60%" height={32} />
+                                        </Box>
+                                    </Card>
+                                </Grid>
+                            ))}
+                        </Grid>
                     </Grid>
 
                     {/* Calendar graph skeleton */}
