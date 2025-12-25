@@ -192,23 +192,27 @@ export function DashboardSkeleton() {
                 {/* Welcome message skeleton */}
                 <Skeleton variant="text" width="40%" height={36} sx={{ mb: 1 }} />
 
-                {/* Balance Cards skeleton - 2-column matching real content */}
+                {/* Balance Cards skeleton - EXACTLY matching real Stack styling */}
                 <Grid container spacing={2} sx={{ mt: 1 }}>
                     {[...Array(2)].map((_, index) => (
                         <Grid item xs={12} md={6} key={index}>
-                            <Card sx={{
+                            <Box sx={{
+                                display: 'flex',
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: 2,
+                                bgcolor: index === 0 ? 'success.lighter' : 'error.lighter',
+                                borderRadius: 2,
                                 p: 2.5,
                                 minHeight: 90,
-                                display: 'flex',
-                                alignItems: 'center',
-                                borderRadius: 2
+                                height: '100%'
                             }}>
                                 <Skeleton variant="circular" width={60} height={60} />
-                                <Box sx={{ ml: 2, flex: 1 }}>
-                                    <Skeleton variant="text" width="40%" height={20} sx={{ mb: 0.5 }} />
-                                    <Skeleton variant="text" width="60%" height={32} />
+                                <Box sx={{ flex: 1 }}>
+                                    <Skeleton variant="text" width="50%" height={18} sx={{ mb: 0.5 }} />
+                                    <Skeleton variant="text" width="40%" height={32} />
                                 </Box>
-                            </Card>
+                            </Box>
                         </Grid>
                     ))}
                 </Grid>
