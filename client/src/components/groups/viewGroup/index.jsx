@@ -8,15 +8,20 @@ import { GroupViewSkeleton } from '../../skeletons';
 import useResponsive from '../../../theme/hooks/useResponsive';
 import { convertToCurrency, currencyFind, categoryIcon } from '../../../utils/helper';
 import ExpenseCard from '../../expense/expenseCard';
-import GroupCategoryGraph from './groupCategoryGraph';
-import GroupMonthlyGraph from './groupMonthlyGraph';
-import TopSpenders from './TopSpenders';
 import { Link as RouterLink } from 'react-router-dom';
 import dataConfig from '../../../config.json';
-import { GroupSettlements } from '../settlement';
-import MyBalance from '../settlement/MyBalance';
 import { exportToPDF, exportToCSV } from '../../../utils/exportUtils';
-import ActivityFeed from './ActivityFeed';
+import { lazy, Suspense } from 'react';
+import { Skeleton } from '@mui/material';
+
+// Lazy load chart components and settlement components to reduce initial bundle
+const GroupCategoryGraph = lazy(() => import('./groupCategoryGraph'));
+const GroupMonthlyGraph = lazy(() => import('./groupMonthlyGraph'));
+const TopSpenders = lazy(() => import('./TopSpenders'));
+const ActivityFeed = lazy(() => import('./ActivityFeed'));
+// Lazy load settlement components (they import Chart.js via UserBalanceChart)
+const GroupSettlements = lazy(() => import('../settlement').then(m => ({ default: m.GroupSettlements })));
+const MyBalance = lazy(() => import('../settlement/MyBalance'));
 
 const profile = JSON.parse(localStorage.getItem('profile'))
 const emailId = profile?.emailId
@@ -201,26 +206,27 @@ export default function ViewGroup() {
                                 sx={{ fontSize: 22, cursor: 'pointer', color: 'success.main', '&:hover': { opacity: 0.7 } }}
                                 title="Export to CSV"
                             />
-                            <Link component={RouterLink} to={dataConfig.EDIT_GROUP_URL + group?._id}>
+                            <Link component={RouterLink} to={dataConfig.EDIT_GROUP_URL + group?._id} aria-label="Edit group settings">
                                 <Iconify icon="akar-icons:edit" sx={{ fontSize: 18 }} />
                             </Link>
                         </Stack>
                         <Typography variant="h4" pb={1}>
                             {group?.groupName}
                         </Typography>
-                        <Typography variant="subtitle2">
+                        <Typography variant="subtitle2" component="p">
                             {group?.groupDescription}
                         </Typography>
 
-                        <Typography mt={1} variant="body2" sx={{ color: 'text.secondary' }}>
+                        <Typography mt={1} variant="body2" sx={{ color: 'text.primary' }}>
                             Created by &nbsp;
-                            <Box component={'span'} sx={{ color: (theme) => theme.palette['primary'].darker }}>
+                            <Box component={'span'} sx={{ color: (theme) => theme.palette['primary'].darker, fontWeight: 600 }}>
                                 {group?.groupOwner}
                             </Box>
                         </Typography>
                         <Stack direction="row" justifyContent="space-between" alignItems="center" mt={1}>
                             <Typography
                                 variant="subtitle2"
+                                component="span"
                                 sx={{
                                     bgcolor: (theme) => theme.palette['warning'].lighter,
                                     p: 1,
@@ -234,7 +240,7 @@ export default function ViewGroup() {
 
                         {/* Members Section */}
                         <Box sx={{ mt: 2, mb: 1 }}>
-                            <Typography variant="subtitle2" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Typography variant="subtitle2" component="p" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                 <Iconify icon="mdi:account-group" sx={{ fontSize: 18 }} />
                                 Members ({(group?.groupMembers?.length || 0) + (group?.pendingMembers?.length || 0)})
                             </Typography>
@@ -354,11 +360,11 @@ export default function ViewGroup() {
                                         <Iconify icon=":nimbus:invoice" sx={{ width: '100%', height: '100%', color: 'white' }} />
                                     </LabelIconStyle>
                                     <Box>
-                                        <Typography variant="h6"
-                                            sx={{ color: (theme) => theme.palette['primary'].dark }}>
+                                        <Typography variant="h6" component="p"
+                                            sx={{ color: (theme) => theme.palette['primary'].darker }}>
                                             Total expense
                                         </Typography>
-                                        <Typography variant="h5"
+                                        <Typography variant="h5" component="p"
                                             sx={{ color: (theme) => theme.palette['primary'].darker }}>
                                             {currencyFind(group?.groupCurrency)} {groupExpense.total ? convertToCurrency(groupExpense.total) : 0}
                                         </Typography>
@@ -378,12 +384,12 @@ export default function ViewGroup() {
                                         <Iconify icon="mdi:cash-plus" sx={{ width: '100%', height: '100%', color: 'white' }} />
                                     </LabelIconStyle>
                                     <Box>
-                                        <Typography variant="h6"
-                                            sx={{ color: (theme) => theme.palette['success'].dark }}
+                                        <Typography variant="h6" component="p"
+                                            sx={{ color: (theme) => theme.palette['success'].darker }}
                                         >
                                             You are owed <br />
                                         </Typography>
-                                        <Typography variant="h5"
+                                        <Typography variant="h5" component="p"
                                             sx={{ color: (theme) => theme.palette['success'].darker }}>
                                             {currencyFind(group?.groupCurrency)} {findUserSplit(group?.split) > 0 ? convertToCurrency(findUserSplit(group?.split)) : 0}
                                         </Typography>
@@ -401,12 +407,12 @@ export default function ViewGroup() {
                                         <Iconify icon="mdi:cash-minus" sx={{ width: '100%', height: '100%', color: 'white' }} />
                                     </LabelIconStyle>
                                     <Box>
-                                        <Typography variant="h6"
-                                            sx={{ color: (theme) => theme.palette['error'].dark }}
+                                        <Typography variant="h6" component="p"
+                                            sx={{ color: (theme) => theme.palette['error'].darker }}
                                         >
                                             You owe <br />
                                         </Typography>
-                                        <Typography variant="h5"
+                                        <Typography variant="h5" component="p"
                                             sx={{ color: (theme) => theme.palette['error'].darker }}>
                                             {currencyFind(group?.groupCurrency)} {findUserSplit(group?.split) < 0 ? convertToCurrency(Math.abs(findUserSplit(group?.split))) : 0}
                                         </Typography>
@@ -508,11 +514,15 @@ export default function ViewGroup() {
                             }}
                         >
                             {viewSettlement == 2 &&
-                                <MyBalance currencyType={group?.groupCurrency} />
+                                <Suspense fallback={<Skeleton variant="rectangular" height={300} sx={{ borderRadius: 2, width: '100%' }} />}>
+                                    <MyBalance currencyType={group?.groupCurrency} />
+                                </Suspense>
                             }
                             {viewSettlement === 1 &&
                                 <Grid item md={12} xs={12}>
-                                    <GroupSettlements currencyType={group?.groupCurrency} />
+                                    <Suspense fallback={<Skeleton variant="rectangular" height={300} sx={{ borderRadius: 2 }} />}>
+                                        <GroupSettlements currencyType={group?.groupCurrency} />
+                                    </Suspense>
                                     {/* Analytics Section - Moved from Expenses Tab */}
                                     <Box sx={{ mt: 4 }}>
                                         <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -521,13 +531,19 @@ export default function ViewGroup() {
                                         </Typography>
                                         <Grid container spacing={2}>
                                             <Grid item xs={12} md={6}>
-                                                <GroupCategoryGraph currencyType={group?.groupCurrency} />
+                                                <Suspense fallback={<Skeleton variant="rectangular" height={250} sx={{ borderRadius: 2 }} />}>
+                                                    <GroupCategoryGraph currencyType={group?.groupCurrency} />
+                                                </Suspense>
                                             </Grid>
                                             <Grid item xs={12} md={6}>
-                                                <TopSpenders currencyType={group?.groupCurrency} />
+                                                <Suspense fallback={<Skeleton variant="rectangular" height={250} sx={{ borderRadius: 2 }} />}>
+                                                    <TopSpenders currencyType={group?.groupCurrency} />
+                                                </Suspense>
                                             </Grid>
                                             <Grid item xs={12}>
-                                                <GroupMonthlyGraph />
+                                                <Suspense fallback={<Skeleton variant="rectangular" height={200} sx={{ borderRadius: 2 }} />}>
+                                                    <GroupMonthlyGraph />
+                                                </Suspense>
                                             </Grid>
                                         </Grid>
                                     </Box>
@@ -535,7 +551,9 @@ export default function ViewGroup() {
                             }
                             {viewSettlement === 3 &&
                                 <Grid item xs={12}>
-                                    <ActivityFeed groupId={params.groupId} />
+                                    <Suspense fallback={<Skeleton variant="rectangular" height={300} sx={{ borderRadius: 2 }} />}>
+                                        <ActivityFeed groupId={params.groupId} />
+                                    </Suspense>
                                 </Grid>
                             }
                             {viewSettlement === 0 &&
