@@ -26,5 +26,5 @@
   "GROUP_PENDING_INVITES": "/api/group/v1/pendingInvites",
   "GROUP_ACCEPT_INVITE": "/api/group/v1/acceptInvite",
   "GROUP_DECLINE_INVITE": "/api/group/v1/declineInvite",
-  "USER_DEFAULT_LOGO_URL": "https://res.cloudinary.com/tuzup/image/upload/v1658929366/SplitApp/user_l7xmft.png"
+  "USER_DEFAULT_LOGO_URL": "https://res.cloudinary.com/tuzup/image/upload/w_64,h_64,c_fill/v1658929366/SplitApp/user_l7xmft.png"
 }
