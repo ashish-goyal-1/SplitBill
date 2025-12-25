@@ -93,7 +93,7 @@ export default function GroupCards({ title, description, groupMembers, share, cu
         <Typography noWrap variant="h3" fontSize={30} sx={{ opacity: 0.9 }}>
           {title}
         </Typography>
-        <Typography noWrap variant="subtitle2" fontSize={14} sx={{ opacity: 0.85, fontWeight: 500 }}>
+        <Typography noWrap variant="subtitle2" component="p" fontSize={14} sx={{ opacity: 0.85, fontWeight: 500 }}>
           {description} &nbsp;</Typography>
       </Box>
       <CardContent
