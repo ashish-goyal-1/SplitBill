@@ -125,7 +125,7 @@ export default function LoginForm() {
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton onClick={handleShowPassword} edge="end">
+                    <IconButton onClick={handleShowPassword} edge="end" aria-label={showPassword ? 'Hide password' : 'Show password'}>
                       <Iconify icon={showPassword ? 'eva:eye-fill' : 'eva:eye-off-fill'} />
                     </IconButton>
                   </InputAdornment>

@@ -62,16 +62,16 @@ const ContentStyle = styled('div')(({ theme }) => ({
 export default function Login() {
   const smUp = useResponsive('up', 'sm');
   const mdUp = useResponsive('up', 'md');
-  
+
   // Check if user is already logged in - redirect BEFORE rendering
   const user = JSON.parse(localStorage.getItem('profile'));
   if (user?.accessToken) {
     return <Navigate to={configData.DASHBOARD_URL} replace />;
   }
-  
+
   return (
     <>
-      <RootStyle>
+      <RootStyle component="main" role="main">
         <HeaderStyle>
           <Box />
           {smUp && (

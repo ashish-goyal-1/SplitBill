@@ -1,0 +1,8 @@
+# SplitBill Robots.txt
+# https://www.robotstxt.org/robotstxt.html
+
+User-agent: *
+Allow: /
+
+# Sitemap (uncomment when available)
+# Sitemap: https://splitbill-7p1s.onrender.com/sitemap.xml

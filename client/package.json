@@ -4,7 +4,6 @@
   "private": true,
   "dependencies": {
     "@date-io/date-fns": "^2.14.0",
-    "date-fns": "^2.29.3",
     "@emotion/react": "^11.9.3",
     "@emotion/styled": "^11.9.3",
     "@faker-js/faker": "^7.3.0",
@@ -20,6 +19,7 @@
     "change-case": "^4.1.2",
     "chart.js": "^3.8.0",
     "chartjs-plugin-datalabels": "^2.0.0",
+    "date-fns": "^2.29.3",
     "formik": "^2.2.9",
     "gravatar-url": "^4.0.1",
     "react": "^18.2.0",
@@ -58,5 +58,8 @@
       "last 1 safari version"
     ]
   },
-  "proxy": "http://localhost:3001"
+  "proxy": "http://localhost:3001",
+  "devDependencies": {
+    "sharp": "^0.34.5"
+  }
 }

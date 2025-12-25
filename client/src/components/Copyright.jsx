@@ -13,7 +13,7 @@ export default function Copyright() {
       <Typography variant="body2" align="center" sx={{ color: 'text.secondary' }}>
         Built with ❤️ by
       </Typography>
-      <Typography variant="subtitle2" align="center" sx={{ color: 'text.primary', fontWeight: 600 }}>
+      <Typography variant="body2" align="center" sx={{ color: 'text.primary', fontWeight: 600 }}>
         {developer.name}
       </Typography>
       <Stack direction="row" spacing={0.5}>
@@ -23,6 +23,7 @@ export default function Copyright() {
             href={developer.github}
             target="_blank"
             size="small"
+            aria-label="GitHub profile"
             sx={{ color: 'text.secondary', '&:hover': { color: 'text.primary' } }}
           >
             <Iconify icon="mdi:github" width={18} />
@@ -34,13 +35,14 @@ export default function Copyright() {
             href={developer.linkedin}
             target="_blank"
             size="small"
+            aria-label="LinkedIn profile"
             sx={{ color: 'text.secondary', '&:hover': { color: '#0077B5' } }}
           >
             <Iconify icon="mdi:linkedin" width={18} />
           </IconButton>
         </Tooltip>
       </Stack>
-      <Typography variant="caption" sx={{ color: 'text.disabled' }}>
+      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
         © {new Date().getFullYear()} SplitBill
       </Typography>
     </Stack>
