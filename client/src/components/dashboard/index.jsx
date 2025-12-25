@@ -183,7 +183,7 @@ export default function Dashboard() {
                                             <Iconify icon="mdi:cash-plus" sx={{ width: '100%', height: '100%', color: 'white' }} />
                                         </LabelIconStyle>
                                         <Box sx={{ flex: 1 }}>
-                                            <Typography variant="subtitle2"
+                                            <Typography variant="subtitle2" component="h2"
                                                 sx={{ color: (theme) => theme.palette['success'].darker, mb: 0.5 }}
                                             >
                                                 You are owed
@@ -206,7 +206,7 @@ export default function Dashboard() {
                                             <Iconify icon="mdi:cash-minus" sx={{ width: '100%', height: '100%', color: 'white' }} />
                                         </LabelIconStyle>
                                         <Box sx={{ flex: 1 }}>
-                                            <Typography variant="subtitle2"
+                                            <Typography variant="subtitle2" component="h2"
                                                 sx={{ color: (theme) => theme.palette['error'].darker, mb: 0.5 }}
                                             >
                                                 You owe
@@ -228,7 +228,7 @@ export default function Dashboard() {
                             borderRadius: 2
                         }}>
                             <Iconify icon="mdi:folder-plus-outline" sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
-                            <Typography variant="h6" color="text.secondary" gutterBottom>
+                            <Typography variant="h6" component="h2" color="text.secondary" gutterBottom>
                                 Welcome to SplitBill!
                             </Typography>
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -245,7 +245,7 @@ export default function Dashboard() {
                                 <Card sx={{ borderLeft: 4, borderColor: 'success.main' }}>
                                     <CardContent>
                                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                                            <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Typography variant="h6" component="h2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <Iconify icon="mdi:folder-multiple" sx={{ fontSize: 24, color: 'success.main' }} />
                                                 Your Groups ({userGroups.length})
                                             </Typography>
@@ -279,7 +279,7 @@ export default function Dashboard() {
                     {/* =================== ZONE 3: ANALYTICS OVERVIEW (Bottom) =================== */}
                     {!newUser && (
                         <Box sx={{ mt: 4 }}>
-                            <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="h6" component="h2" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                                 <Iconify icon="mdi:chart-line" sx={{ fontSize: 24 }} />
                                 Analytics Overview
                             </Typography>

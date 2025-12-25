@@ -47,7 +47,7 @@ export default function DashboardNavbar({ onOpenSidebar }) {
   return (
     <RootStyle>
       <ToolbarStyle>
-        <IconButton onClick={onOpenSidebar} sx={{ mr: 1, color: 'text.primary', display: { lg: 'none' } }}>
+        <IconButton onClick={onOpenSidebar} sx={{ mr: 1, color: 'text.primary', display: { lg: 'none' } }} aria-label="Open sidebar">
           <Iconify icon="eva:menu-2-fill" />
         </IconButton>
 
@@ -56,7 +56,7 @@ export default function DashboardNavbar({ onOpenSidebar }) {
         <Stack direction="row" alignItems="center" spacing={{ xs: 0.5, sm: 1.5 }}>
           {/* Dark Mode Toggle */}
           <Tooltip title={darkMode ? "Light Mode" : "Dark Mode"}>
-            <IconButton onClick={toggleDarkMode} sx={{ color: 'text.primary' }}>
+            <IconButton onClick={toggleDarkMode} sx={{ color: 'text.primary' }} aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}>
               <Iconify icon={darkMode ? "ph:sun-bold" : "ph:moon-bold"} width={24} height={24} />
             </IconButton>
           </Tooltip>

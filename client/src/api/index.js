@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 // Create axios instance
-const API = axios.create({ baseURL: '' })
+const API = axios.create({ baseURL: process.env.REACT_APP_API_URL || '' })
 
 // Helper to get current profile from localStorage
 const getProfile = () => {

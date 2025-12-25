@@ -20,7 +20,7 @@ const RootStyle = styled('div')({
   overflow: 'hidden'
 });
 
-const MainStyle = styled('div')(({ theme }) => ({
+const MainStyle = styled('main')(({ theme }) => ({
   flexGrow: 1,
   overflow: 'auto',
   minHeight: '100%',
