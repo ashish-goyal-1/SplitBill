@@ -5,10 +5,10 @@
  * - Automatic connection/reconnection
  * - Room-based subscriptions (groups/users)
  * - Event listeners for real-time updates
+ * - Lazy loaded to reduce initial bundle size
  */
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { io } from 'socket.io-client';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 
 const SocketContext = createContext(null);
 
@@ -19,35 +19,48 @@ const SOCKET_URL = process.env.REACT_APP_SOCKET_URL ||
 export const SocketProvider = ({ children }) => {
     const [socket, setSocket] = useState(null);
     const [isConnected, setIsConnected] = useState(false);
+    const socketRef = useRef(null);
 
     useEffect(() => {
-        // Initialize socket connection
-        const newSocket = io(SOCKET_URL, {
-            autoConnect: true,
-            reconnection: true,
-            reconnectionAttempts: 5,
-            reconnectionDelay: 1000,
-        });
+        // Dynamically import socket.io-client to reduce initial bundle size
+        let mounted = true;
 
-        newSocket.on('connect', () => {
-            console.log('[Socket] Connected:', newSocket.id);
-            setIsConnected(true);
-        });
+        import('socket.io-client').then(({ io }) => {
+            if (!mounted) return;
 
-        newSocket.on('disconnect', () => {
-            console.log('[Socket] Disconnected');
-            setIsConnected(false);
-        });
+            const newSocket = io(SOCKET_URL, {
+                autoConnect: true,
+                reconnection: true,
+                reconnectionAttempts: 5,
+                reconnectionDelay: 1000,
+            });
 
-        newSocket.on('connect_error', (error) => {
-            console.log('[Socket] Connection error:', error.message);
-        });
+            newSocket.on('connect', () => {
+                console.log('[Socket] Connected:', newSocket.id);
+                setIsConnected(true);
+            });
 
-        setSocket(newSocket);
+            newSocket.on('disconnect', () => {
+                console.log('[Socket] Disconnected');
+                setIsConnected(false);
+            });
+
+            newSocket.on('connect_error', (error) => {
+                console.log('[Socket] Connection error:', error.message);
+            });
+
+            socketRef.current = newSocket;
+            setSocket(newSocket);
+        }).catch((error) => {
+            console.log('[Socket] Failed to load socket.io:', error);
+        });
 
         // Cleanup on unmount
         return () => {
-            newSocket.disconnect();
+            mounted = false;
+            if (socketRef.current) {
+                socketRef.current.disconnect();
+            }
         };
     }, []);
 
@@ -97,15 +110,13 @@ export const SocketProvider = ({ children }) => {
         }
     }, [socket]);
 
-    // Subscribe to settlement events
     const onSettlement = useCallback((callback) => {
         if (socket) {
-            socket.on('settlement-made', callback);
-            return () => socket.off('settlement-made', callback);
+            socket.on('settlement', callback);
+            return () => socket.off('settlement', callback);
         }
     }, [socket]);
 
-    // Subscribe to group update events
     const onGroupUpdated = useCallback((callback) => {
         if (socket) {
             socket.on('group-updated', callback);
@@ -113,7 +124,6 @@ export const SocketProvider = ({ children }) => {
         }
     }, [socket]);
 
-    // Subscribe to personal notifications
     const onNotification = useCallback((callback) => {
         if (socket) {
             socket.on('notification', callback);
@@ -121,7 +131,6 @@ export const SocketProvider = ({ children }) => {
         }
     }, [socket]);
 
-    // Subscribe to group invite events
     const onGroupInvite = useCallback((callback) => {
         if (socket) {
             socket.on('group-invite', callback);

@@ -86,7 +86,7 @@ export const CalenderExpenseGraph = () => {
             }}
             >
                 <AlertBanner showAlert={alert} alertMessage={alertMessage} severity='error' />
-                <Typography variant="h6">
+                <Typography variant="h6" component="h3">
                     Expense Graph - {montlyView ? "Daily View" : "Monthly View"}
                 </Typography>
 

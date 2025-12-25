@@ -42,13 +42,13 @@ export const CategoryExpenseChart = () => {
 
     const options = {
         maintainAspectRatio: false,
-        plugins: {   
+        plugins: {
             datalabels: {
-                display:false,
+                display: false,
                 formatter: (value) => {
-                  return convertToCurrency(value) ;
+                    return convertToCurrency(value);
                 }
-              },
+            },
             legend: {
                 display: true,
                 position: 'bottom',
@@ -77,21 +77,21 @@ export const CategoryExpenseChart = () => {
 
     return (
         <>
-        {loading ? <Loading /> :
-        <Box sx={{
-            p: 5,
-            bgcolor: 'background.paper',
-            borderRadius: 2,
-            boxShadow: 5
-        }}>
-              <Typography variant="h6" mb={2}>
-                Category Expense Chart
-            </Typography>
+            {loading ? <Loading /> :
+                <Box sx={{
+                    p: 5,
+                    bgcolor: 'background.paper',
+                    borderRadius: 2,
+                    boxShadow: 5
+                }}>
+                    <Typography variant="h6" component="h3" mb={2}>
+                        Category Expense Chart
+                    </Typography>
                     <AlertBanner showAlert={alert} alertMessage={alertMessage} severity='error' />
                     <Box height={500}>
-                    <Doughnut data={data} options={options} plugins={[ChartDataLabels]}/>
-                    </Box>                   
-        </Box>}
+                        <Doughnut data={data} options={options} plugins={[ChartDataLabels]} />
+                    </Box>
+                </Box>}
         </>
     )
 }

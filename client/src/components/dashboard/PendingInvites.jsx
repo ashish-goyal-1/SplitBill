@@ -111,8 +111,9 @@ export default function PendingInvites() {
         }
     };
 
-    // Don't render if no pending invites
-    if (!loading && invites.length === 0) {
+    // Don't render anything during loading or if no pending invites
+    // This prevents CLS - we don't show a loading state that disappears
+    if (loading || invites.length === 0) {
         return null;
     }
 

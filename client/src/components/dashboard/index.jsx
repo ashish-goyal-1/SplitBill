@@ -1,21 +1,26 @@
 import { Box, Container, Fab, Grid, Typography, Card, CardContent, Stack, styled } from "@mui/material"
-import { useEffect, useState } from "react"
+import { useEffect, useState, lazy, Suspense } from "react"
 import { Link } from "react-router-dom"
 import { getUserExpenseService } from "../../services/expenseServices"
 import { getUserGroupsService } from "../../services/groupServices"
-import { DashboardSkeleton } from "../skeletons"
-import { CalenderExpenseGraph } from "./CalenderExpenseGraph"
-import { CategoryExpenseChart } from "./CategoryExpenseGraph"
-import { GroupExpenseChart } from "./GroupExpenseChart"
+import { DashboardSkeleton, ChartSkeleton } from "../skeletons"
 import { RecentTransactions } from "./RecentTransactions"
 import { WelcomeMessage } from "./welcomeMessage"
 import PendingInvites from "./PendingInvites"
-import GlobalAddExpenseModal from "./GlobalAddExpenseModal"
 import GroupCards from "./GroupCards"
 import { Link as RouterLink } from 'react-router-dom';
 import configData from '../../config.json'
 import Iconify from "../Iconify"
 import { convertToCurrency, currencyFind } from "../../utils/helper"
+
+// Lazy load heavy chart components (these use named exports)
+const CalenderExpenseGraph = lazy(() => import("./CalenderExpenseGraph").then(module => ({ default: module.CalenderExpenseGraph })));
+const CategoryExpenseChart = lazy(() => import("./CategoryExpenseGraph").then(module => ({ default: module.CategoryExpenseChart })));
+const GroupExpenseChart = lazy(() => import("./GroupExpenseChart").then(module => ({ default: module.GroupExpenseChart })));
+
+// Lazy load modal (uses default export)
+const GlobalAddExpenseModal = lazy(() => import("./GlobalAddExpenseModal"));
+
 
 
 const LabelIconStyle = styled('div')(({ theme }) => ({
@@ -116,7 +121,7 @@ export default function Dashboard() {
     const renderBalanceList = (balances, colorKey) => {
         if (balances.length === 0) {
             return (
-                <Typography variant="h4" sx={{ color: (theme) => theme.palette[colorKey].darker }}>
+                <Typography variant="h4" component="h3" sx={{ color: (theme) => theme.palette[colorKey].darker }}>
                     {currencyFind('INR')} 0
                 </Typography>
             );
@@ -239,10 +244,10 @@ export default function Dashboard() {
                             </Link>
                         </Box>
                     ) : (
-                        <Grid container spacing={3}>
+                        <Grid container spacing={3} sx={{ minHeight: 320 }}>
                             {/* Left Column: Your Groups (Clean navigation cards) */}
                             <Grid item xs={12} md={8}>
-                                <Card sx={{ borderLeft: 4, borderColor: 'success.main' }}>
+                                <Card sx={{ borderLeft: 4, borderColor: 'success.main', height: '100%', minHeight: 300 }}>
                                     <CardContent>
                                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                                             <Typography variant="h6" component="h2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -286,17 +291,23 @@ export default function Dashboard() {
                             <Grid container spacing={3}>
                                 {/* Groupwise Expense Chart */}
                                 <Grid item xs={12} md={6}>
-                                    <GroupExpenseChart />
+                                    <Suspense fallback={<ChartSkeleton height={300} />}>
+                                        <GroupExpenseChart />
+                                    </Suspense>
                                 </Grid>
 
                                 {/* Category Chart */}
                                 <Grid item xs={12} md={6}>
-                                    <CategoryExpenseChart />
+                                    <Suspense fallback={<ChartSkeleton height={300} />}>
+                                        <CategoryExpenseChart />
+                                    </Suspense>
                                 </Grid>
 
                                 {/* Monthly Expense Graph - Full Width */}
                                 <Grid item xs={12}>
-                                    <CalenderExpenseGraph />
+                                    <Suspense fallback={<ChartSkeleton height={250} />}>
+                                        <CalenderExpenseGraph />
+                                    </Suspense>
                                 </Grid>
                             </Grid>
                             <Typography variant="caption" sx={{ mt: 2, display: 'block', color: 'text.secondary', textAlign: 'center' }}>
@@ -323,11 +334,13 @@ export default function Dashboard() {
                     )}
 
                     {/* Global Add Expense Modal */}
-                    <GlobalAddExpenseModal
-                        open={modalOpen}
-                        onClose={() => setModalOpen(false)}
-                        onSuccess={handleModalSuccess}
-                    />
+                    <Suspense fallback={null}>
+                        {modalOpen && <GlobalAddExpenseModal
+                            open={modalOpen}
+                            onClose={() => setModalOpen(false)}
+                            onSuccess={handleModalSuccess}
+                        />}
+                    </Suspense>
                 </>
             }
         </Container>

@@ -44,6 +44,7 @@ export const RecentTransactions = () => {
                     <AlertBanner showAlert={alert} alertMessage={alertMessage} severity='error' />
                     <Typography
                         variant="h6"
+                        component="h3"
                         sx={(theme) => ({
                             p: 2,
                             bgcolor: theme.palette.mode === 'dark'
