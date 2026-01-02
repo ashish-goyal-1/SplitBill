@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 // Create axios instance
-const API = axios.create({ baseURL: process.env.REACT_APP_API_URL || '' })
+const API = axios.create({ baseURL: '' })
 
 // Helper to get current profile from localStorage
 const getProfile = () => {
@@ -170,7 +170,16 @@ export const getExpDetails = (formData) => API.post('/api/expense/v1/view', form
 
 export const getSettle = (formData) => API.post('/api/group/v1/settlement', formData)
 
-export const makeSettle = (formData) => API.post('/api/group/v1/makeSettlement', formData)
+// Add UUID for idempotency
+import { v4 as uuidv4 } from 'uuid';
+
+export const makeSettle = (formData) => {
+  // Inject idempotency key if not present
+  if (!formData.idempotencyKey) {
+    formData.idempotencyKey = uuidv4();
+  }
+  return API.post('/api/group/v1/makeSettlement', formData);
+}
 
 export const getUserNames = (formData) => API.post('/api/users/v1/getUserNames', formData)
 

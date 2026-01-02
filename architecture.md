@@ -11,11 +11,11 @@ SplitBill uses a **Client-Server** architecture powered by the MERN stack. Unlik
 │     :3000       │   WSS   │                 :3001                   │
 └─────────────────┘         └───────────────────┬─────────────────────┘
                                                 │
-                                                │ Mongoose
+                                                │ Mongoose (Transactions)
                                                 ▼
                                     ┌───────────────────────┐
                                     │    MongoDB Atlas      │
-                                    │  (Cloud Database)     │
+                                    │  (Replica Set)        │
                                     └───────────────────────┘
 ```
 
@@ -194,6 +194,8 @@ Instead of N² individual payments, we use a **Hybrid O(N log N)** algorithm to 
 | Authentication | JWT (Dual Token) | Access Token (15m) + Refresh Token (7d) with rotation |
 | Password Storage | bcryptjs | Salted hashing before storage |
 | Email Verification | Token-based | 15-minute expiry verification links |
+| Transaction Safety | Mongoose Sessions | ACID transactions for all monetary updates |
+| Idempotency | Unique Keys | Prevents duplicate settlements from network retries |
 | Transport | HTTPS / WSS | Encrypted data in transit |
 | CORS | Whitelisted Origins | Prevents unauthorized frontend access |
 | Gzip | compression middleware | ~70% response size reduction |

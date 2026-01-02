@@ -233,6 +233,13 @@ const Settlement = new mongoose.Schema({
     currency: {
         type: String,
         default: 'INR'
+    },
+    // Idempotency key to prevent duplicate settlements
+    idempotencyKey: {
+        type: String,
+        unique: true,
+        sparse: true, // Allows null/undefined values to exist (legacy data)
+        index: true
     }
 })
 

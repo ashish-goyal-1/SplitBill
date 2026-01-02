@@ -363,6 +363,8 @@ This function is used to make the settlements in the gorup
 
 */
 exports.makeSettlement = async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
         var reqBody = new model.Settlement(req.body)
         validator.notNull(reqBody.groupId)
@@ -370,20 +372,47 @@ exports.makeSettlement = async (req, res) => {
         validator.notNull(reqBody.settleFrom)
         validator.notNull(reqBody.settleAmount)
         validator.notNull(reqBody.settleDate)
-        const group = await model.Group.findOne({
-            _id: req.body.groupId
-        })
-        if (!group) {
-            var err = new Error("Invalid Group Id")
-            err.status = 400
-            throw err
+
+        // 1. Defensive Checks
+        if (req.body.settleAmount <= 0) {
+            throw new Error("Settlement amount must be positive");
+        }
+        if (req.body.settleFrom === req.body.settleTo) {
+            throw new Error("Payer and Payee cannot be the same person");
         }
 
+        const group = await model.Group.findOne({
+            _id: req.body.groupId
+        }).session(session);
+
+        if (!group) {
+            throw new Error("Invalid Group Id")
+        }
+
+        // Verify if payer is actually in the group
+        if (!group.split[0].hasOwnProperty(req.body.settleFrom) || !group.split[0].hasOwnProperty(req.body.settleTo)) {
+            throw new Error("Payer or Payee not part of this group");
+        }
+
+        // 2. Atomic Updates
         group.split[0][req.body.settleFrom] += req.body.settleAmount
         group.split[0][req.body.settleTo] -= req.body.settleAmount
 
-        var id = await model.Settlement.create(reqBody)
-        var update_response = await model.Group.updateOne({ _id: group._id }, { $set: { split: group.split } })
+        // Nullifying floating point errors
+        group.split[0][req.body.settleFrom] = Math.round((group.split[0][req.body.settleFrom] + Number.EPSILON) * 100) / 100;
+        group.split[0][req.body.settleTo] = Math.round((group.split[0][req.body.settleTo] + Number.EPSILON) * 100) / 100;
+
+        // Create settlement with current session
+        var id = await model.Settlement.create([reqBody], { session: session });
+
+        // Update group balance with current session
+        var update_response = await model.Group.updateOne(
+            { _id: group._id },
+            { $set: { split: group.split } }
+        ).session(session);
+
+        await session.commitTransaction();
+        session.endSession();
 
         // Send settlement confirmation emails (async, don't block response)
         const currencySymbol = getCurrencySymbol(group.groupCurrency);
@@ -399,18 +428,30 @@ exports.makeSettlement = async (req, res) => {
         await activityLogger.createActivityLog(
             req.body.groupId,
             'SETTLEMENT_MADE',
-            `${req.body.settleFrom.split('@')[0]} paid ${currencySymbol}${req.body.settleAmount} to ${req.body.settleTo.split('@')[0]}`,
+            `${req.body.settleFrom.split('@')[0]} paid ${currencySymbol}${req.body.settleAmount} to ${req.body.settleTo.split('@')[0]} in transaction`,
             req.body.settleFrom,
-            { amount: req.body.settleAmount, from: req.body.settleFrom, to: req.body.settleTo }
+            { amount: req.body.settleAmount, from: req.body.settleFrom, to: req.body.settleTo, transaction: true }
         );
 
         res.status(200).json({
             message: "Settlement successfully!",
             status: "Success",
             update: update_response,
-            response: id
+            response: id[0] // create returns an array when using sessions
         })
     } catch (err) {
+        await session.abortTransaction();
+        session.endSession();
+
+        // Handle Idempotency Duplicate Key Error
+        if (err.code === 11000) {
+            logger.warn(`Duplicate settlement attempt detected: ${err.message}`);
+            return res.status(409).json({ // 409 Conflict
+                message: "Settlement already processed (Idempotent)",
+                status: "Success" // Returning success-like status for client handling
+            });
+        }
+
         logger.error(`URL : ${req.originalUrl} | staus : ${err.status} | message: ${err.message}`)
         res.status(err.status || 500).json({
             message: err.message

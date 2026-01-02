@@ -81,6 +81,8 @@ A powerful real-time full-stack MERN app for smart group expense tracking, optim
 - **Multi-Currency Balance Cards**: Debts aggregated by currency (no mixing ₹ + $)
 - Balance view showing who owes whom
 - Record settlements with payment method tracking
+- **Transactional Integrity**: All financial updates wrapped in **ACID Transactions** to prevent data inconsistency
+- **Idempotency**: Duplicate payment prevention using unique keys to handle network retries safely
 
 ### 📧 Email & Notifications
 - **Real-time in-app notifications** with unread badge

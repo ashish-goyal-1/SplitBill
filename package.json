@@ -9,6 +9,7 @@
     "server": "npx nodemon app.js",
     "start": "node app.js",
     "heroku-postbuild": "cd client && npm install && npm run build",
+    "build": "npm run heroku-postbuild",
     "dev": "concurrently \"npm run server\" \"cd client && npm start\" "
   },
   "keywords": [
