@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { v4 as uuidv4 } from 'uuid';
 
 // Create axios instance
 const API = axios.create({ baseURL: '' })
@@ -171,7 +172,6 @@ export const getExpDetails = (formData) => API.post('/api/expense/v1/view', form
 export const getSettle = (formData) => API.post('/api/group/v1/settlement', formData)
 
 // Add UUID for idempotency
-import { v4 as uuidv4 } from 'uuid';
 
 export const makeSettle = (formData) => {
   // Inject idempotency key if not present
