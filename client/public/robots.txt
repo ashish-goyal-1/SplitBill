@@ -5,4 +5,4 @@ User-agent: *
 Allow: /
 
 # Sitemap (uncomment when available)
-# Sitemap: https://splitbill-7p1s.onrender.com/sitemap.xml
+# Sitemap: https://splitbill-nx5k.onrender.com/sitemap.xml
