@@ -41,17 +41,12 @@ build/Release
 node_modules/
 jspm_packages/
 
-
 #MongoDB Fiels 
 DB/
 .DS_Store
 
-# Documentation (internal)
-docs/
-
-# Demo script (local only)
-SplitBill_Demo_Script.md
-SplitBill_Functional_Specification.md
+# # Documentation (internal)
+# docs/
 
 # TypeScript v1 declaration files
 typings/

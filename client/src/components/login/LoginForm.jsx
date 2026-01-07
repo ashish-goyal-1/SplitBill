@@ -143,6 +143,63 @@ export default function LoginForm() {
             <LoadingButton fullWidth size="large" type="submit" variant="contained" loading={isSubmitting}>
               Login
             </LoadingButton>
+
+            {/* Demo Account Quick Access for Recruiters */}
+            <Box sx={{
+              mt: 3,
+              p: 2,
+              border: '1px dashed',
+              borderColor: 'primary.main',
+              borderRadius: 2,
+              backgroundColor: 'action.hover'
+            }}>
+              <Box sx={{ textAlign: 'center', mb: 1.5 }}>
+                <Box component="span" sx={{
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  color: 'primary.main',
+                  textTransform: 'uppercase',
+                  letterSpacing: 1
+                }}>
+                  🚀 Quick Demo Access
+                </Box>
+                <Box sx={{ fontSize: '0.7rem', color: 'text.secondary', mt: 0.5 }}>
+                  Click to auto-fill and login instantly
+                </Box>
+              </Box>
+              <Stack direction="row" spacing={1}>
+                <Button
+                  fullWidth
+                  size="small"
+                  variant="outlined"
+                  disabled={isSubmitting}
+                  onClick={async () => {
+                    // Visual feedback: fill fields first
+                    await formik.setFieldValue('emailId', 'john@gmail.com');
+                    await formik.setFieldValue('password', 'John@123');
+                    // Small delay for visual effect, then submit
+                    setTimeout(() => formik.handleSubmit(), 300);
+                  }}
+                  sx={{ fontSize: '0.75rem' }}
+                >
+                  👤 Demo User 1
+                </Button>
+                <Button
+                  fullWidth
+                  size="small"
+                  variant="outlined"
+                  disabled={isSubmitting}
+                  onClick={async () => {
+                    await formik.setFieldValue('emailId', 'jane@gmail.com');
+                    await formik.setFieldValue('password', 'Jane@123');
+                    setTimeout(() => formik.handleSubmit(), 300);
+                  }}
+                  sx={{ fontSize: '0.75rem' }}
+                >
+                  👤 Demo User 2
+                </Button>
+              </Stack>
+            </Box>
           </Stack>
         </Form>
       </FormikProvider></>
