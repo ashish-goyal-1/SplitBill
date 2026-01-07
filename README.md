@@ -1,6 +1,6 @@
 # 💰 SplitBill
 
-A powerful real-time full-stack MERN app for smart group expense tracking, optimized debt settlement, activity audit trails, searchable expenses, exportable reports, instant WebSocket sync, and insightful analytics.
+A powerful real-time full-stack MERN app for smart group expense tracking, optimized debt settlement, activity audit trails, searchable expenses, exportable reports, instant WebSocket sync, and insightful analytics
 
 [![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-SplitBill-success?style=for-the-badge)](https://splitbill-7p1s.onrender.com)
 [![GitHub](https://img.shields.io/badge/GitHub-ashish--goyal--1-blue?logo=github)](https://github.com/ashish-goyal-1/SplitBill)
