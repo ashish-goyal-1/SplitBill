@@ -56,7 +56,7 @@ const ContentStyle = styled('div')(({ theme }) => ({
   display: 'flex',
   justifyContent: 'center',
   flexDirection: 'column',
-  padding: theme.spacing(12, 0),
+  padding: theme.spacing(6, 0),
 }));
 
 export default function Login() {
@@ -97,7 +97,7 @@ export default function Login() {
               Sign in to SplitBill!
             </Typography>
 
-            <Typography sx={{ color: 'text.secondary', mb: 5 }}>Enter your details below.</Typography>
+            <Typography sx={{ color: 'text.secondary', mb: 3 }}>Enter your details below.</Typography>
 
             {/* <AuthSocial />*/}
 
@@ -111,7 +111,7 @@ export default function Login() {
                 </Link>
               </Typography>
             )}
-            <Stack spacing={3} sx={{ mt: 5 }}>
+            <Stack spacing={3} sx={{ mt: 3 }}>
               <Copyright />
             </Stack>
           </ContentStyle>

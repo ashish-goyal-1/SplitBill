@@ -1,6 +1,9 @@
 import { useRoutes } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
-import { Box, CircularProgress } from '@mui/material';
+// guards
+import AuthGuard from './guards/AuthGuard';
+// components
+import LoadingScreen from './components/LoadingScreen';
 
 //Layouts 
 import LogoOnlyLayout from './layouts/LogoOnlyLayout';
@@ -30,20 +33,6 @@ const VerifyEmail = lazy(() => import('./components/auth/VerifyEmail'));
 const ForgotPassword = lazy(() => import('./components/auth/ForgotPassword'));
 const ResetPassword = lazy(() => import('./components/auth/ResetPassword'));
 
-// Loading fallback component
-const LoadingScreen = () => (
-  <Box
-    sx={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      minHeight: '60vh'
-    }}
-  >
-    <CircularProgress size={40} />
-  </Box>
-);
-
 // Wrapper for lazy loaded components
 const Loadable = (Component) => (props) => (
   <Suspense fallback={<LoadingScreen />}>
@@ -55,7 +44,11 @@ export default function Router() {
   return useRoutes([
     {
       path: configData.DASHBOARD_HOME_URL,
-      element: <DashboardLayout />,
+      element: (
+        <AuthGuard>
+          <DashboardLayout />
+        </AuthGuard>
+      ),
       children: [
         { path: configData.DASHBOARD_URL, element: <Suspense fallback={<LoadingScreen />}><Dashboard /></Suspense> },
         { path: configData.CREATE_GROUP_URL, element: <Suspense fallback={<LoadingScreen />}><CreateGroup /></Suspense> },

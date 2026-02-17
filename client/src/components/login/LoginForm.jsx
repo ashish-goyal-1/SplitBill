@@ -77,7 +77,7 @@ export default function LoginForm() {
     </Snackbar>
       <FormikProvider value={formik}>
         <Form autoComplete="off" noValidate onSubmit={handleSubmit}>
-          <Stack spacing={3}>
+          <Stack spacing={2}>
             {smUp && showAlert && !unverifiedEmail && (
               <Alert severity="error" sx={{ width: '100%' }}>
                 {alertMessage}
@@ -146,14 +146,14 @@ export default function LoginForm() {
 
             {/* Demo Account Quick Access for Recruiters */}
             <Box sx={{
-              mt: 3,
-              p: 2,
+              mt: 2,
+              p: 1.5,
               border: '1px dashed',
               borderColor: 'primary.main',
               borderRadius: 2,
               backgroundColor: 'action.hover'
             }}>
-              <Box sx={{ textAlign: 'center', mb: 1.5 }}>
+              <Box sx={{ textAlign: 'center', mb: 1 }}>
                 <Box component="span" sx={{
                   fontSize: '0.75rem',
                   fontWeight: 600,
