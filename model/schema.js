@@ -1,18 +1,17 @@
 var mongoose = require('mongoose')
 var logger = require('../helper/logger')
 
-mongoose.connect(process.env.MONGODB_URI,
-    //     {
-    //     maxPoolSize: 50,
-    //     wtimeoutMS: 2500,
-    //     useNewUrlParser: true
-    // }
-).then(() => {
+mongoose.connect(process.env.MONGODB_URI, {
+    serverSelectionTimeoutMS: 5000, // Keep trying to connect for 5 seconds
+    socketTimeoutMS: 45000,         // Close sockets after 45 seconds of inactivity
+    family: 4                       // Use IPv4, skip trying IPv6
+}).then(() => {
     logger.info(`DB Connection Established`)
     console.log("DB Connected")
 }).catch(err => {
-    logger.error(`DB Connection Fail | ${err.stack}`)
-    console.log(err)
+    logger.error(`DB Connection Fail | ${err.message}`)
+    console.log("❌ DB Connection Fail:", err.message)
+    // We don't exit here so the /health check can still return 200
 })
 
 const User = new mongoose.Schema({
