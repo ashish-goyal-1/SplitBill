@@ -228,6 +228,72 @@ Instead of N² individual payments, we use a **Hybrid O(N log N)** algorithm to 
 
 ---
 
+---
+
+## 📡 API Reference
+
+This section provides a detailed breakdown of all available API endpoints. All requests require a `Content-Type: application/json` header and JWT authentication (except for open auth routes).
+
+### 🔐 Authentication
+| Endpoint                        | Method | Description                              |
+|---------------------------------|--------|------------------------------------------|
+| `/api/users/v1/register`        | POST   | Register new user                        |
+| `/api/users/v1/login`           | POST   | Login (returns access + refresh tokens)  |
+| `/api/users/v1/refresh`         | POST   | Refresh access token                     |
+| `/api/users/v1/logout`          | POST   | Invalidate refresh token                 |
+| `/api/users/v1/view`            | POST   | View user profile                        |
+| `/api/users/v1/edit`            | POST   | Update user profile                      |
+| `/api/users/v1/updatePassword`  | POST   | Change password                          |
+| `/api/users/v1/delete`          | DELETE | Delete user account                      |
+
+### 👥 Groups
+| Endpoint                        | Method | Description                              |
+|---------------------------------|--------|------------------------------------------|
+| `/api/group/v1/add`             | POST   | Create new group                         |
+| `/api/group/v1/view`            | POST   | View group details                       |
+| `/api/group/v1/user`            | POST   | Get all groups for a user                |
+| `/api/group/v1/edit`            | POST   | Update group                             |
+| `/api/group/v1/delete`          | DELETE | Delete group                             |
+
+### 💸 Expenses
+| Endpoint                        | Method | Description                                      |
+|---------------------------------|--------|--------------------------------------------------|
+| `/api/expense/v1/add`           | POST   | Add expense (supports equal/exact/percentage)    |
+| `/api/expense/v1/edit`          | POST   | Edit expense                                     |
+| `/api/expense/v1/delete`        | DELETE | Delete expense                                   |
+| `/api/expense/v1/view`          | POST   | View single expense                              |
+| `/api/expense/v1/group`         | POST   | Get all expenses for a group                     |
+| `/api/expense/v1/user`          | POST   | Get all expenses for a user                      |
+| `/api/expense/v1/user/recent`   | POST   | Get 5 most recent expenses                       |
+
+### 💰 Settlements & Invites
+| Endpoint                        | Method | Description                                      |
+|---------------------------------|--------|--------------------------------------------------|
+| `/api/group/v1/settlement`      | POST   | Calculate group balance sheet                    |
+| `/api/group/v1/makeSettlement`  | POST   | Record a settlement payment                      |
+| `/api/group/v1/consolidate`     | POST   | Cross-group debt consolidation                   |
+| `/api/group/v1/nudge`           | POST   | Send payment reminder email                      |
+| `/api/group/v1/pendingInvites`  | POST   | Get user's pending group invitations             |
+| `/api/group/v1/acceptInvite`    | POST   | Accept a group invitation                        |
+| `/api/group/v1/declineInvite`   | POST   | Decline a group invitation                       |
+| `/api/group/v1/activity`        | POST   | Get activity logs for a group                    |
+
+### 📊 Analytics
+| Endpoint                            | Method | Description                      |
+|-------------------------------------|--------|----------------------------------|
+| `/api/analytics/category-breakdown` | POST   | Expenses by category             |
+| `/api/analytics/monthly-trends`     | POST   | Monthly spending trends          |
+| `/api/analytics/user-summary`       | POST   | User spending summary            |
+| `/api/analytics/top-spenders`       | POST   | Top spenders in group            |
+| `/api/analytics/daily-breakdown`    | POST   | Daily spending breakdown         |
+
+### 🛠️ System
+| Endpoint    | Method | Description                        |
+|-------------|--------|------------------------------------|
+| `/health`   | GET    | Health check (Liveness probe)      |
+
+---
+
 ## Frontend Architecture (React)
 
 ```
